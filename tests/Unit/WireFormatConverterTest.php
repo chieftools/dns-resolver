@@ -181,6 +181,23 @@ describe('buildTypeBitmap', function () {
         $bitmap = $this->converter->buildTypeBitmap(['A', 'CAA']);
         expect(strlen($bitmap))->toBeGreaterThan(3);
     });
+
+    it('includes non-standard types like NXNAME and RP', function () {
+        // These types appear in NSEC bitmaps from various DNS providers.
+        // Both bitmaps must be identical since they encode the same type codes.
+        $bitmap1 = $this->converter->buildTypeBitmap(['A', 'RRSIG', 'NSEC', 'NXNAME']);
+        $bitmap2 = $this->converter->buildTypeBitmap(['A', 'RRSIG', 'NSEC', 'NXNAME']);
+        expect($bitmap1)->toBe($bitmap2);
+
+        // Without NXNAME the bitmap should differ
+        $bitmap3 = $this->converter->buildTypeBitmap(['A', 'RRSIG', 'NSEC']);
+        expect($bitmap1)->not->toBe($bitmap3);
+
+        // RP (type 17) should also be included
+        $withRp    = $this->converter->buildTypeBitmap(['A', 'RP']);
+        $withoutRp = $this->converter->buildTypeBitmap(['A']);
+        expect($withRp)->not->toBe($withoutRp);
+    });
 });
 
 describe('base32Decode', function () {
