@@ -261,7 +261,7 @@ class ResolutionSession
         $cnameRecords = array_values(array_filter($answers, static fn (RawRecord $r) => $r->type === 'CNAME'));
 
         if ($cnameRecords !== []) {
-            return $this->followCname($cnameRecords, $answers, $types, $depth);
+            return $this->followCname($cnameRecords, $cnameRecords, $types, $depth);
         }
 
         // Query for remaining types at the same authoritative nameserver
