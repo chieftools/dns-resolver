@@ -347,7 +347,7 @@ class ResolutionSession
                 $answers           = array_merge($answers, $additionalAnswers);
             } else {
                 $emptyValidationStatus = $this->dnssecValidator !== null
-                    ? $this->validateEmptyResponse($additionalResult->authority, $currentZone)
+                    ? $this->validateEmptyResponse($additionalResult->authority, $currentZone, $nameserver['addr'])
                     : null;
 
                 $this->emit(new ResolverEvent(
@@ -472,7 +472,7 @@ class ResolutionSession
         $primaryType = $types[0];
 
         $emptyResponseStatus = $this->dnssecValidator !== null
-            ? $this->validateEmptyResponse($result->authority, $currentZone)
+            ? $this->validateEmptyResponse($result->authority, $currentZone, $nameserver['addr'])
             : null;
 
         $this->emit(new ResolverEvent(
@@ -964,7 +964,7 @@ class ResolutionSession
     /**
      * @param list<RawRecord> $authority
      */
-    private function validateEmptyResponse(array $authority, string $zone): ?string
+    private function validateEmptyResponse(array $authority, string $zone, string $nameserverAddr): ?string
     {
         if ($this->dnssecValidator === null) {
             return null;
@@ -1009,7 +1009,7 @@ class ResolutionSession
                 return 'invalid';
             }
 
-            $zoneDnskeys = $this->fetchAndCacheDnskeys($signerZone, $authority);
+            $zoneDnskeys = $this->fetchAndCacheDnskeys($signerZone, $nameserverAddr);
 
             if ($zoneDnskeys === null) {
                 return null;
@@ -1174,32 +1174,16 @@ class ResolutionSession
     }
 
     /**
-     * @param list<RawRecord> $authority
-     *
      * @return list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}>|null
      */
-    private function fetchAndCacheDnskeys(string $zone, array $authority): ?array
+    private function fetchAndCacheDnskeys(string $zone, string $nameserverAddr): ?array
     {
         if ($this->dnssecValidator === null) {
             return null;
         }
 
-        $soaRecord = null;
-
-        foreach ($authority as $r) {
-            if ($r->type === 'SOA') {
-                $soaRecord = $r;
-                break;
-            }
-        }
-
-        if ($soaRecord === null) {
-            return null;
-        }
-
-        // Try to fetch DNSKEY via a well-known public resolver
         try {
-            $dnskeyResult = $this->query($zone, 'DNSKEY', '1.1.1.1', true);
+            $dnskeyResult = $this->query($zone, 'DNSKEY', $nameserverAddr, true);
         } catch (QueryException) {
             return null;
         }
