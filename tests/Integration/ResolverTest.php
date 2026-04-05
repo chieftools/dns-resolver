@@ -49,6 +49,35 @@ describe('multi-type query', function () {
     });
 });
 
+describe('resolve with RecordType enum', function () {
+    it('accepts a single RecordType enum', function () {
+        $resolver = resolverWithFixture('simple-a-record.json');
+        $result   = $resolver->resolve('example.com', RecordType::A, DnssecMode::OFF);
+
+        expect($result->isEmpty())->toBeFalse();
+
+        foreach ($result->records as $record) {
+            expect($record->type)->toBe(RecordType::A);
+        }
+    });
+
+    it('accepts a list of RecordType enums', function () {
+        $resolver = resolverWithFixture('multi-type-query.json');
+        $result   = $resolver->resolve('example.com', [RecordType::A, RecordType::AAAA, RecordType::MX], DnssecMode::OFF);
+
+        expect($result->isEmpty())->toBeFalse();
+        expect($result->ofType(RecordType::A)->records)->not->toBeEmpty();
+    });
+
+    it('accepts a mixed list of RecordType enums and strings', function () {
+        $resolver = resolverWithFixture('multi-type-query.json');
+        $result   = $resolver->resolve('example.com', [RecordType::A, 'AAAA', RecordType::MX], DnssecMode::OFF);
+
+        expect($result->isEmpty())->toBeFalse();
+        expect($result->ofType(RecordType::A)->records)->not->toBeEmpty();
+    });
+});
+
 describe('NXDOMAIN', function () {
     it('returns NXDOMAIN for non-existent domain', function () {
         $resolver = resolverWithFixture('nxdomain.json');

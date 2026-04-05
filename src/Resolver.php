@@ -33,19 +33,22 @@ readonly class Resolver
     /**
      * Resolve DNS records for a domain.
      *
-     * @param string|list<string>                 $types   Record type(s) to query
-     * @param (Closure(ResolverEvent): void)|null $onEvent Optional callback for real-time resolution events
+     * @param RecordType|string|list<RecordType|string> $types   Record type(s) to query
+     * @param (Closure(ResolverEvent): void)|null       $onEvent Optional callback for real-time resolution events
      */
     public function resolve(
         string $domain,
-        string|array $types = 'A',
+        RecordType|string|array $types = 'A',
         DnssecMode $dnssec = DnssecMode::ON,
         ?Closure $onEvent = null,
     ): LookupResult {
-        $types = is_string($types) ? [$types] : $types;
+        $types = is_array($types) ? $types : [$types];
 
-        // Normalize types to uppercase
-        $types = array_map('strtoupper', $types);
+        // Normalize types to uppercase strings
+        $types = array_map(
+            static fn (RecordType|string $type) => $type instanceof RecordType ? $type->value : strtoupper($type),
+            $types,
+        );
 
         // Initialize DNSSEC validator if enabled
         $dnssecValidator = $dnssec !== DnssecMode::OFF ? new DnssecValidator : null;
