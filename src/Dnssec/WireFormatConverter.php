@@ -50,6 +50,7 @@ readonly class WireFormatConverter
         'SVCB'       => 64,
         'HTTPS'      => 65,
         'SPF'        => 99,
+        'NXNAME'     => 128,
         'URI'        => 256,
         'CAA'        => 257,
     ];

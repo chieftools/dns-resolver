@@ -40,6 +40,7 @@ describe('getTypeCode', function () {
         expect($this->converter->getTypeCode('TXT'))->toBe(16);
         expect($this->converter->getTypeCode('DNSKEY'))->toBe(48);
         expect($this->converter->getTypeCode('HTTPS'))->toBe(65);
+        expect($this->converter->getTypeCode('NXNAME'))->toBe(128);
     });
 
     it('handles TYPEnn format', function () {
