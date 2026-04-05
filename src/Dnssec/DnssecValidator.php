@@ -616,7 +616,7 @@ class DnssecValidator
         $derPrefix    = "\x30\x2a\x30\x05\x06\x03\x2b\x65\x70\x03\x21\x00";
         $publicKeyPem = "-----BEGIN PUBLIC KEY-----\n"
                         . chunk_split(base64_encode($derPrefix . $dnskey['public_key']), 64, "\n")
-                        . "-----END PUBLIC KEY-----";
+                        . '-----END PUBLIC KEY-----';
 
         $pubKey = openssl_pkey_get_public($publicKeyPem);
 

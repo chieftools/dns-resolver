@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 use ChiefTools\DNS\Resolver\ResolverConfig;
 use ChiefTools\DNS\Resolver\ResolutionSession;
-use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Executors\RawRecord;
 use ChiefTools\DNS\Resolver\Executors\QueryResult;
+use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;
 use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 
 /**
  * Executor that throws QueryException for queries to specific nameserver addresses.
  */
-$failingExecutorClass = new class implements DnsQueryExecutor {
+$failingExecutorClass = new class implements DnsQueryExecutor
+{
     /** @var array<string, QueryResult> */
     private array $fixtures = [];
 
@@ -33,7 +34,7 @@ $failingExecutorClass = new class implements DnsQueryExecutor {
     public function query(string $domain, string $type, string $nameserverAddr, bool $dnssec = false): QueryResult
     {
         if (in_array($nameserverAddr, $this->failAddresses, true)) {
-            throw new QueryException("timeout (simulated)");
+            throw new QueryException('timeout (simulated)');
         }
 
         $key = "{$domain}|{$type}|{$nameserverAddr}";
