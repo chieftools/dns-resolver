@@ -1,0 +1,570 @@
+[
+    {
+        "key": ".|DNSKEY|192.5.5.241",
+        "query_time_ms": 13,
+        "answer": [
+            {
+                "name": ".",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 172800,
+                "data": "256 3 8 AwEAAbNTVC2+pry4pc37pZI9Oj6b8FHxT3VGrvSPKLE1Tjyfe2kUZUtVX5xrv6AV4BVO+ygrYjGZMNgEnbLU4zknnlnhI2e0g6iTza1aZh0dRZXGH16C1NUNq1CxBkUhIYQhQDeIOtLacx+RmFTc+hSHJJ2MJ79IS00kA7eKi6mofQ7SPJmdJVjI+JAx791y0f5QaB+iHGANU53FwiYXNUQjfAzCrtOaSevGsx8SO8BTaXLAjFq5eewOtwScVwfVDhEXlvpE6e+mIncwhNKaMRD9IPuHENqCNPI5MjxfAMVS6cEY8eEozIkv/vHc+0Auu3n+Fcx6F2Js4KPXaHEShAXugfU="
+            },
+            {
+                "name": ".",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 172800,
+                "data": "256 3 8 AwEAAb5dDYffpgAJ8VUGLwQtWXPlQWsjIFJtCM00/XaKU+8ln+ofah3q2KxEIjvzQg+nqdxRj+8emtPne1mtYcbFWP4Q9E+DniOJLK09R05FuzvGbrG7DDdRDUX/cedFdV7O8pFEAYpJqYNR9BCTIAV973DO2biauKSA31b7I2lK/woxoR1tf5cqJ4SMbJUviuHicAEoUi2ATswloZNWd5T5thmEFZnxFx7D5UgKCY7oflS7+GU7dNJwEtmFnWYVETHN0kHXVz6aguouaAZp706YXNIoR/iTgQhmsR7XX+wL0Z8QM2LxQIyU6vRZ06IyuJMGRMiwkSuGElbumyBt12JZbrU="
+            },
+            {
+                "name": ".",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 172800,
+                "data": "257 3 8 AwEAAaz/tAm8yTn4Mfeh5eyI96WSVexTBAvkMgJzkKTOiW1vkIbzxeF3+/4RgWOq7HrxRixHlFlExOLAJr5emLvN7SWXgnLh4+B5xQlNVz8Og8kvArMtNROxVQuCaSnIDdD5LKyWbRd2n9WGe2R8PzgCmr3EgVLrjyBxWezF0jLHwVN8efS3rCj/EWgvIWgb9tarpVUDK/b58Da+sqqls3eNbuv7pr+eoZG+SrDK6nWeL3c6H5Apxz7LjVc1uTIdsIXxuOLYA4/ilBmSVIzuDWfdRUfhHdY6+cn8HFRm+2hM8AnXGXws9555KrUB5qihylGa8subX2Nn6UwNR1AkUTV74bU="
+            },
+            {
+                "name": ".",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 172800,
+                "data": "257 3 8 AwEAAa96jeuknZlaeSrvyAJj6ZHv28hhOKkx3rLGXVaC6rXTsDc449/cidltpkyGwCJNnOAlFNKF2jBosZBU5eeHspaQWOmOElZsjICMQMC3aeHbGiShvZsx4wMYSjH8e7Vrhbu6irwCzVBApESjbUdpWWmEnhathWu1jo+siFUiRAAxm9qyJNg/wOZqqzL/dL/q8PkcRU5oUKEpUge71M3ej2/7CPqpdVwuMoTvoB+ZOT4YeGyxMvHmbrxlFzGOHOijtzN+u1TQNatX2XBuzZNQ1K+s2CXkPIZo7s6JgZyvaBevYtxPvYLw4z9mR7K2vaF18UYH9Z9GNUUeayffKC73PYc="
+            },
+            {
+                "name": ".",
+                "class": "IN",
+                "type": "RRSIG",
+                "ttl": 172800,
+                "data": "DNSKEY 8 0 172800 20260422000000 20260401000000 20326 . Nt4x7yqmsincs4ioIgZsndCkDnX0VGYvrwktw71R5xqyzdE8no8GBFuMSWBfOe7t64hIVApinTCZozwhiHQ9vjxEzz1vOf/3AjXXYclWI2UtaLlkJnb+Kv5ZFQH5j98nmRo1d0DKHg5rVUUQKY0VsfxPmnJ0y+ZWA7RWzQSR0zKvZbrX2wjtaUe5ZqpWk/+Yk3e4MiC1P9wMs5w6X+MkidQDlMQsrYQW57Xt8iqTK2Wm66WIXzDkP7OSl8jTLINhz+o/3OOMLgkG8zTwh4BTWI36ySyZIUtqXdrsIZrX60U1nutqAMONInBHXGLfw3VODBlMvIeD0WLk3e52pYP/Tg=="
+            }
+        ],
+        "authority": [],
+        "additional": []
+    },
+    {
+        "key": "thisdoesnotexist.example.com|A|192.5.5.241",
+        "query_time_ms": 15,
+        "answer": [],
+        "authority": [
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "a.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "b.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "c.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "d.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "e.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "f.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "g.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "h.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "i.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "j.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "k.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "l.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "m.gtld-servers.net."
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "DS",
+                "ttl": 86400,
+                "data": "19718 13 2 8acbb0cd28f41250a80a491389424d341522d946b0da0c0291f2d3d771d7805a"
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "RRSIG",
+                "ttl": 86400,
+                "data": "DS 8 1 86400 20260418170000 20260405160000 54393 . ZVTJGMVK5BMhZyFQRdeHn79EI15JVPJx+wWK8x/7y7eNuR4QzSv+YUIf9CLMg+0pOw8hkYqSy3ypGmX44k/BmDGITGEJBZHufNCVBKrhyFqLnImekY/I8tqzlD99Bw5JrFQg1F3HXWUfFadDixn6zRDgU2MRjENFNimiEmzZYL07WOGnfTIzlbschAqSmGF3cOBtgxea08cM0GVJ8GMs6AoXdF8dAvdpyN5LPOfPQTUS1oVEeKB7hU7M0MmDfgxjigRQtzIHheVnJ6EVL2frKKmFgc2oKognp19jezjxohV88wzMTohEY2Zy3H83OS7XjZJXaEvTsJbejpr9Cz7F2Q=="
+            }
+        ],
+        "additional": [
+            {
+                "name": "a.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.5.6.30"
+            },
+            {
+                "name": "a.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:503:a83e:0:0:0:2:30"
+            },
+            {
+                "name": "b.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.33.14.30"
+            },
+            {
+                "name": "b.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:503:231d:0:0:0:2:30"
+            },
+            {
+                "name": "c.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.26.92.30"
+            },
+            {
+                "name": "c.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:503:83eb:0:0:0:0:30"
+            },
+            {
+                "name": "d.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.31.80.30"
+            },
+            {
+                "name": "d.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:500:856e:0:0:0:0:30"
+            },
+            {
+                "name": "e.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.12.94.30"
+            },
+            {
+                "name": "e.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:502:1ca1:0:0:0:0:30"
+            },
+            {
+                "name": "f.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.35.51.30"
+            },
+            {
+                "name": "f.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:503:d414:0:0:0:0:30"
+            },
+            {
+                "name": "g.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.42.93.30"
+            },
+            {
+                "name": "g.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:503:eea3:0:0:0:0:30"
+            },
+            {
+                "name": "h.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.54.112.30"
+            },
+            {
+                "name": "h.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:502:8cc:0:0:0:0:30"
+            },
+            {
+                "name": "i.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.43.172.30"
+            },
+            {
+                "name": "i.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:503:39c1:0:0:0:0:30"
+            },
+            {
+                "name": "j.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.48.79.30"
+            },
+            {
+                "name": "j.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:502:7094:0:0:0:0:30"
+            },
+            {
+                "name": "k.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.52.178.30"
+            },
+            {
+                "name": "k.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:503:d2d:0:0:0:0:30"
+            },
+            {
+                "name": "l.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.41.162.30"
+            },
+            {
+                "name": "l.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:500:d937:0:0:0:0:30"
+            },
+            {
+                "name": "m.gtld-servers.net.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "192.55.83.30"
+            },
+            {
+                "name": "m.gtld-servers.net.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2001:501:b1f9:0:0:0:0:30"
+            }
+        ]
+    },
+    {
+        "key": "com|DNSKEY|192.26.92.30",
+        "query_time_ms": 24,
+        "answer": [
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 86400,
+                "data": "257 3 13 tx8EZRAd2+K/DJRV0S+hbBzaRPS/G6JVNBitHzqpsGlz8huE61Ms9ANe6NSDLKJtiTBqfTJWDAywEp1FCsEINQ=="
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 86400,
+                "data": "256 3 13 i529KPLz+9AkrHsuDUvozFxk/jAcCaku7WNyRKVlEubhh2x9Vimdi//ANLbNk/JW1uZ53RNASSNvopgemNL9kw=="
+            },
+            {
+                "name": "com.",
+                "class": "IN",
+                "type": "RRSIG",
+                "ttl": 86400,
+                "data": "DNSKEY 13 1 86400 20260412140235 20260328135735 19718 com. 5QCFG0CZDmEQvGfRpWboz4talOc1LdY9LICyC8zsmnNfNVR/irkD+3BX26K2rIgFLGIwGl1u5QLgkkWgk9zVBA=="
+            }
+        ],
+        "authority": [],
+        "additional": []
+    },
+    {
+        "key": "thisdoesnotexist.example.com|A|192.26.92.30",
+        "query_time_ms": 21,
+        "answer": [],
+        "authority": [
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "hera.ns.cloudflare.com."
+            },
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "NS",
+                "ttl": 172800,
+                "data": "elliott.ns.cloudflare.com."
+            },
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "DS",
+                "ttl": 86400,
+                "data": "2371 13 2 c988ec423e3880eb8dd8a46fe06ca230ee23f35b578d64e78b29c3e1c83d245a"
+            },
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "RRSIG",
+                "ttl": 86400,
+                "data": "DS 13 2 86400 20260411013812 20260404002812 35511 com. ITs13jrgufDtlo3wvnYMFnEJYJssHrN1mtwJJQ4Rr7nBE1u32Oewhz8F11TPIBKOyPBkI7vHPnTu33/+Fv9Zlg=="
+            }
+        ],
+        "additional": [
+            {
+                "name": "hera.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "108.162.192.162"
+            },
+            {
+                "name": "hera.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "172.64.32.162"
+            },
+            {
+                "name": "hera.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "173.245.58.162"
+            },
+            {
+                "name": "hera.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2606:4700:50:0:0:0:adf5:3aa2"
+            },
+            {
+                "name": "hera.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2803:f800:50:0:0:0:6ca2:c0a2"
+            },
+            {
+                "name": "hera.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2a06:98c1:50:0:0:0:ac40:20a2"
+            },
+            {
+                "name": "elliott.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "108.162.195.228"
+            },
+            {
+                "name": "elliott.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "162.159.44.228"
+            },
+            {
+                "name": "elliott.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "A",
+                "ttl": 172800,
+                "data": "172.64.35.228"
+            },
+            {
+                "name": "elliott.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2606:4700:58:0:0:0:a29f:2ce4"
+            },
+            {
+                "name": "elliott.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2803:f800:50:0:0:0:6ca2:c3e4"
+            },
+            {
+                "name": "elliott.ns.cloudflare.com.",
+                "class": "IN",
+                "type": "AAAA",
+                "ttl": 172800,
+                "data": "2a06:98c1:50:0:0:0:ac40:23e4"
+            }
+        ]
+    },
+    {
+        "key": "example.com|DNSKEY|173.245.58.162",
+        "query_time_ms": 15,
+        "answer": [
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 3600,
+                "data": "257 3 13 mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+GqJxpVXckHAeF+KkxLbxILfDLUT0rAK9iUzy1L53eKGQ=="
+            },
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 3600,
+                "data": "256 3 13 oJMRESz5E4gYzS/q6XDrvU1qMPYIjCWzJaOau8XNEZeqCYKD5ar0IRd8KqXXFJkqmVfRvMGPmM1x8fGAa2XhSA=="
+            },
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 3600,
+                "data": "256 3 13 kxipjoIbNZDsWqEKaYaGq6fM/XThrRp1ue6AV9R/n3eWxpGCeCWJb47PEEEj/Q6VAYFW/7UFo5mXoZfxKYZa3A=="
+            },
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "DNSKEY",
+                "ttl": 3600,
+                "data": "256 3 13 MjyZielP0GqniI1+j+wAG/3t0ImDDIlj1CxR0oobkZQHSKH2Fqx6tm2NcYu57POJ83SzCWLkqIjZHS1mh5wbaw=="
+            },
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "RRSIG",
+                "ttl": 3600,
+                "data": "DNSKEY 13 2 3600 20260517174628 20260317174628 2371 example.com. u86hgRNxRnWBhMx3nq/0zlJ5zMoAQ4brH2M9LIZlqdo4CAEQDsBN+DAsqdv5a+n24J4+xvRchJY8AztpETxKbg=="
+            }
+        ],
+        "authority": [],
+        "additional": []
+    },
+    {
+        "key": "thisdoesnotexist.example.com|A|173.245.58.162",
+        "query_time_ms": 16,
+        "answer": [],
+        "authority": [
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "SOA",
+                "ttl": 1800,
+                "data": "elliott.ns.cloudflare.com. dns.cloudflare.com. 2400651045 10000 2400 604800 1800"
+            },
+            {
+                "name": "thisdoesnotexist.example.com.",
+                "class": "IN",
+                "type": "NSEC",
+                "ttl": 1800,
+                "data": "\u0000.thisdoesnotexist.example.com. RRSIG NSEC NXNAME"
+            },
+            {
+                "name": "example.com.",
+                "class": "IN",
+                "type": "RRSIG",
+                "ttl": 1800,
+                "data": "SOA 13 2 1800 20260406192626 20260404172626 34505 example.com. UQndY9K8WUppD9MjjPcoWQc9dqcpDh01EpJiW1RL7lC1HTVgnOs+MFBpdcTte2Oq4w/KPfEIpVC753JIW8gA5A=="
+            },
+            {
+                "name": "thisdoesnotexist.example.com.",
+                "class": "IN",
+                "type": "RRSIG",
+                "ttl": 1800,
+                "data": "NSEC 13 3 1800 20260406192626 20260404172626 34505 example.com. cVk6kwhdNweq9BbtQvkjDvjn7T+J1u9frCBtWXatg+35mMRItBvZCwquYj2OIRuw76SG9u6AoiVtjMTJgRRCDw=="
+            }
+        ],
+        "additional": []
+    }
+]

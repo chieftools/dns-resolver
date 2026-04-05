@@ -1,0 +1,54 @@
+{
+    "name": "chieftools/dns-resolver",
+    "description": "Recursive DNS resolver with DNSSEC validation",
+    "type": "library",
+    "license": "Apache-2.0",
+    "require": {
+        "php": "^8.4",
+        "ext-openssl": "*",
+        "mikepultz/netdns2": "^2.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "pestphp/pest": "^4.4",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "ChiefTools\\DNS\\Resolver\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ChiefTools\\DNS\\Resolver\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "cs": "@phpcs",
+        "stan": "@phpstan",
+        "check": [
+            "@test",
+            "@phpcs",
+            "@phpstan"
+        ],
+        "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "vendor/bin/pest --parallel --stop-on-failure"
+        ],
+        "test:ci": [
+            "Composer\\Config::disableProcessTimeout",
+            "vendor/bin/pest --ci --parallel --compact"
+        ],
+        "phpcs": "vendor/bin/php-cs-fixer fix",
+        "phpcs:ci": "vendor/bin/php-cs-fixer fix --dry-run --diff",
+        "phpstan": "vendor/bin/phpstan analyse --memory-limit=2G",
+        "phpstan:ci": "vendor/bin/phpstan analyse --memory-limit=2G --error-format=github"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable"
+}
