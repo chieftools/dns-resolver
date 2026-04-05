@@ -146,6 +146,25 @@ describe('rdataToWire', function () {
     it('returns null for unknown types', function () {
         expect($this->converter->rdataToWire('UNKNOWN', 'data'))->toBeNull();
     });
+
+    it('converts NSEC record', function () {
+        $wire = $this->converter->rdataToWire('NSEC', 'b.example.com. A NS RRSIG NSEC');
+
+        expect($wire)->not->toBeNull();
+        // Next domain name in wire format + type bitmap
+        expect(str_starts_with($wire, "\x01b\x07example\x03com\x00"))->toBeTrue();
+    });
+
+    it('converts NSEC record with null byte in next domain', function () {
+        // Cloudflare "Black Lies" NSEC: next domain starts with \x00
+        $data = "\x00.example.com. A RRSIG NSEC";
+        $wire = $this->converter->rdataToWire('NSEC', $data);
+
+        expect($wire)->not->toBeNull();
+        // Next domain should be \x01\x00 (length-1 label containing null byte)
+        // followed by \x07example\x03com\x00 (rest of domain)
+        expect(str_starts_with($wire, "\x01\x00\x07example\x03com\x00"))->toBeTrue();
+    });
 });
 
 describe('buildTypeBitmap', function () {

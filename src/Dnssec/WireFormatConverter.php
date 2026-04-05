@@ -488,14 +488,14 @@ readonly class WireFormatConverter
 
     private function nsecToWire(string $data): ?string
     {
-        $parts = preg_split('/\s+/', trim($data), 2);
+        $parts = preg_split('/\s+/', trim($data, " \t\n\r\x0B"), 2);
 
         if ($parts === false || count($parts) < 2) {
             return null;
         }
 
         $nextDomain = $parts[0];
-        $typeList   = preg_split('/\s+/', trim($parts[1]));
+        $typeList   = preg_split('/\s+/', trim($parts[1], " \t\n\r\x0B"));
 
         if ($typeList === false) {
             return null;
