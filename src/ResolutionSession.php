@@ -624,8 +624,8 @@ class ResolutionSession
         try {
             $dnskeyResult = $this->query('.', 'DNSKEY', $nameserverAddr, true);
         } catch (QueryException) {
-            $this->dnssecValidator->markInvalid('failed to fetch root DNSKEY');
-
+            // Transient network error — don't mark invalid so a fallback
+            // nameserver can retry the DNSKEY fetch.
             return;
         }
 
@@ -673,8 +673,8 @@ class ResolutionSession
         try {
             $dnskeyResult = $this->query($zone, 'DNSKEY', $nameserverAddr, true);
         } catch (QueryException) {
-            $this->dnssecValidator->markZoneInvalid($zone, "failed to fetch DNSKEY for {$zone}");
-
+            // Transient network error — don't mark the zone as invalid so a
+            // fallback nameserver can retry the DNSKEY fetch.
             return;
         }
 
