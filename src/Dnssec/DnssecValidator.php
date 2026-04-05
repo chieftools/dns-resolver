@@ -533,10 +533,13 @@ class DnssecValidator
     private function verifySignature(string $data, string $signature, array $dnskey): bool
     {
         return match ($dnskey['algorithm']) {
+            Algorithm::RSASHA1->value,
+            Algorithm::RSASHA1NSEC3->value    => $this->verifyRsaSignature($data, $signature, $dnskey, 'sha1'),
             Algorithm::RSASHA256->value       => $this->verifyRsaSignature($data, $signature, $dnskey, 'sha256'),
             Algorithm::RSASHA512->value       => $this->verifyRsaSignature($data, $signature, $dnskey, 'sha512'),
             Algorithm::ECDSAP256SHA256->value => $this->verifyEcdsaSignature($data, $signature, $dnskey, 'sha256', 'P-256'),
             Algorithm::ECDSAP384SHA384->value => $this->verifyEcdsaSignature($data, $signature, $dnskey, 'sha384', 'P-384'),
+            Algorithm::ED25519->value         => $this->verifyEd25519Signature($data, $signature, $dnskey),
             default                           => false,
         };
     }
@@ -559,6 +562,7 @@ class DnssecValidator
         }
 
         $algo = match ($hashAlgo) {
+            'sha1'   => OPENSSL_ALGO_SHA1,
             'sha256' => OPENSSL_ALGO_SHA256,
             'sha512' => OPENSSL_ALGO_SHA512,
             default  => OPENSSL_ALGO_SHA256,
@@ -597,5 +601,30 @@ class DnssecValidator
         };
 
         return openssl_verify($data, $derSignature, $pubKey, $algo) === 1;
+    }
+
+    /**
+     * @param array{public_key: string} $dnskey
+     */
+    private function verifyEd25519Signature(string $data, string $signature, array $dnskey): bool
+    {
+        if (strlen($dnskey['public_key']) !== 32) {
+            return false;
+        }
+
+        // Ed25519 SubjectPublicKeyInfo: SEQUENCE { SEQUENCE { OID 1.3.101.112 }, BIT STRING { key } }
+        $derPrefix    = "\x30\x2a\x30\x05\x06\x03\x2b\x65\x70\x03\x21\x00";
+        $publicKeyPem = "-----BEGIN PUBLIC KEY-----\n"
+                        . chunk_split(base64_encode($derPrefix . $dnskey['public_key']), 64, "\n")
+                        . "-----END PUBLIC KEY-----";
+
+        $pubKey = openssl_pkey_get_public($publicKeyPem);
+
+        if ($pubKey === false) {
+            return false;
+        }
+
+        // Ed25519 does not use a separate hash — pass 0 for the algorithm
+        return openssl_verify($data, $signature, $pubKey, 0) === 1;
     }
 }
