@@ -906,7 +906,13 @@ class ResolutionSession
             $validated = false;
 
             if ($hasRrsig) {
+                $signerMatchesZone = false;
+
                 foreach ($rrsigs[$type] as $rrsig) {
+                    if ($rrsig['signer'] === $signerZone) {
+                        $signerMatchesZone = true;
+                    }
+
                     $signingKey = $this->dnssecValidator->findSigningKey($rrsig, $zoneDnskeys);
 
                     if ($signingKey === null) {
@@ -923,14 +929,20 @@ class ResolutionSession
                 }
 
                 if (!$validated) {
-                    $this->dnssecValidator->markInvalid("RRSIG verification failed for {$type} records");
-                    $anyInvalid = true;
+                    if ($signerMatchesZone) {
+                        $this->dnssecValidator->markInvalid("RRSIG verification failed for {$type} records");
+                        $anyInvalid = true;
+                    } else {
+                        // Records are signed by a different zone (e.g. CNAME target
+                        // records included by the nameserver) — skip, don't fail.
+                        $allSigned = false;
+                    }
                 }
             } else {
                 $allSigned = false;
             }
 
-            $recordStatus = $hasRrsig ? $validated : null;
+            $recordStatus = $hasRrsig ? ($validated ?: null) : null;
 
             foreach ($records as $record) {
                 $this->dnssecValidator->setRecordValidation(
