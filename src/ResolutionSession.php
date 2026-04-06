@@ -60,11 +60,12 @@ class ResolutionSession
         string $domain,
         array $types,
         array $nameservers,
+        int $lookups = 0,
         int $depth = 0,
         ?array $parentDs = null,
         ?string $currentZone = null,
     ): array|string|null {
-        if ($depth > $this->config->maxDepth) {
+        if ($lookups > $this->config->maxDepth) {
             throw new RuntimeException('Too many recursive lookups!');
         }
 
@@ -77,7 +78,7 @@ class ResolutionSession
         $currentZone = $currentZone ?? '.';
 
         // Resolve nameserver address if needed
-        $resolvedNameservers = $this->resolveNameserverAddress($nameservers, $domain, $types, $depth, $parentDs, $currentZone);
+        $resolvedNameservers = $this->resolveNameserverAddress($nameservers, $domain, $types, $lookups, $depth, $parentDs, $currentZone);
 
         if ($resolvedNameservers === null) {
             return null;
@@ -103,21 +104,21 @@ class ResolutionSession
         try {
             $result = $this->query($domain, $primaryType, $nameserver['addr'], $this->dnssecValidator !== null);
         } catch (QueryException $e) {
-            return $this->handleQueryFailure($domain, $types, $nameservers, $depth, $parentDs, $currentZone, $e->getMessage());
+            return $this->handleQueryFailure($domain, $types, $nameservers, $lookups, $depth, $parentDs, $currentZone, $e->getMessage());
         }
 
         $this->totalTimeMs += $result->queryTimeMs;
 
         // Handle answers if present
         if ($result->answer !== []) {
-            return $this->handleAnswers($result, $domain, $types, $nameserver, $currentZone, $depth);
+            return $this->handleAnswers($result, $domain, $types, $nameserver, $currentZone, $lookups, $depth);
         }
 
         // Check for NS delegation
         $authorityNs = array_values(array_filter($result->authority, static fn (RawRecord $r) => $r->type === 'NS'));
 
         if ($authorityNs !== []) {
-            return $this->handleDelegation($result, $domain, $types, $authorityNs, $nameserver, $currentZone, $depth);
+            return $this->handleDelegation($result, $domain, $types, $authorityNs, $nameserver, $currentZone, $lookups, $depth);
         }
 
         // No answers and no delegation - authoritative empty response
@@ -135,6 +136,7 @@ class ResolutionSession
         array $nameservers,
         string $domain,
         array $types,
+        int $lookups,
         int $depth,
         ?array $parentDs,
         string $currentZone,
@@ -165,6 +167,7 @@ class ResolutionSession
                 $nameservers[0]['host'],
                 [$recurseLookupType],
                 RootServers::random(ipv6: $this->config->ipv6),
+                $lookups + 1,
                 $depth + 1,
             );
 
@@ -203,7 +206,7 @@ class ResolutionSession
                     nameserver: $nextNameservers[0]['host'],
                 ));
 
-                return $this->resolveNameserverAddress($nextNameservers, $domain, $types, $depth, $parentDs, $currentZone);
+                return $this->resolveNameserverAddress($nextNameservers, $domain, $types, $lookups, $depth, $parentDs, $currentZone);
             }
 
             return null;
@@ -228,6 +231,7 @@ class ResolutionSession
         array $types,
         array $nameserver,
         string $currentZone,
+        int $lookups,
         int $depth,
     ): array {
         $answers     = $result->answer;
@@ -261,7 +265,7 @@ class ResolutionSession
         $cnameRecords = array_values(array_filter($answers, static fn (RawRecord $r) => $r->type === 'CNAME'));
 
         if ($cnameRecords !== []) {
-            return $this->followCname($cnameRecords, $cnameRecords, $types, $depth);
+            return $this->followCname($cnameRecords, $cnameRecords, $types, $lookups, $depth);
         }
 
         // Query for remaining types at the same authoritative nameserver
@@ -277,7 +281,7 @@ class ResolutionSession
      *
      * @return list<RawRecord>
      */
-    private function followCname(array $cnameRecords, array $answers, array $types, int $depth): array
+    private function followCname(array $cnameRecords, array $answers, array $types, int $lookups, int $depth): array
     {
         $typesToFollow = array_values(array_filter($types, static fn (string $t) => $t !== 'CNAME'));
 
@@ -318,6 +322,7 @@ class ResolutionSession
             $cnameTarget,
             $typesToFollow,
             RootServers::random(ipv6: $this->config->ipv6),
+            $lookups + 1,
             $depth + 3,
         );
 
@@ -405,6 +410,7 @@ class ResolutionSession
         array $authorityNs,
         array $nameserver,
         string $currentZone,
+        int $lookups,
         int $depth,
     ): array|string|null {
         $primaryType   = $types[0];
@@ -445,7 +451,7 @@ class ResolutionSession
             nameserver: $nextNameservers[0]['host'],
         ));
 
-        return $this->resolve($domain, $types, $nextNameservers, $depth, $nextDs, $delegatedZone);
+        return $this->resolve($domain, $types, $nextNameservers, $lookups, $depth, $nextDs, $delegatedZone);
     }
 
     /**
@@ -532,6 +538,7 @@ class ResolutionSession
         string $domain,
         array $types,
         array $nameservers,
+        int $lookups,
         int $depth,
         ?array $parentDs,
         string $currentZone,
@@ -555,7 +562,7 @@ class ResolutionSession
                 nameserver: $nextNameservers[0]['host'],
             ));
 
-            return $this->resolve($domain, $types, $nextNameservers, $depth, $parentDs, $currentZone);
+            return $this->resolve($domain, $types, $nextNameservers, $lookups, $depth, $parentDs, $currentZone);
         }
 
         return null;

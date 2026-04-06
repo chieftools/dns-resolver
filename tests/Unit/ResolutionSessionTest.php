@@ -55,8 +55,8 @@ describe('depth limit', function () {
         $executor = new FixtureExecutor;
         $session  = createSession($executor, new ResolverConfig(maxDepth: 0));
 
-        // Depth check is $depth > maxDepth, so depth=1 with maxDepth=0 triggers it
-        expect(fn () => $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')], depth: 1))->toThrow(
+        // Lookups check is $lookups > maxDepth, so lookups=1 with maxDepth=0 triggers it
+        expect(fn () => $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')], lookups: 1))->toThrow(
             RuntimeException::class,
             'Too many recursive lookups!',
         );
