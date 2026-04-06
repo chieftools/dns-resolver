@@ -443,16 +443,6 @@ class ResolutionSession
             status: $delegationStatus,
         ));
 
-        // Check for glue records that answer our query
-        $glueAnswers = array_values(array_filter(
-            $result->additional,
-            static fn (RawRecord $r) => $r->name === "{$domain}." && in_array($r->type, $types, true),
-        ));
-
-        if ($glueAnswers !== []) {
-            return $glueAnswers;
-        }
-
         // Build next nameservers list
         $nextNameservers = $this->buildNextNameservers($result, $authorityNs);
 
