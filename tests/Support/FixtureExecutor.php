@@ -27,10 +27,11 @@ class FixtureExecutor implements DnsQueryExecutor
             $key = $entry['key'];
 
             $executor->fixtures[$key] = new QueryResult(
-                queryTimeMs: $entry['query_time_ms'] ?? 0,
                 answer: self::convertSection($entry['answer'] ?? []),
                 authority: self::convertSection($entry['authority'] ?? []),
                 additional: self::convertSection($entry['additional'] ?? []),
+                queryTimeMs: $entry['query_time_ms'] ?? 0,
+                responseCode: strtoupper($entry['response_code'] ?? $entry['status'] ?? 'NOERROR'),
             );
         }
 

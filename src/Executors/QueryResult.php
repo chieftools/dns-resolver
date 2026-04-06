@@ -19,5 +19,6 @@ readonly class QueryResult
         public array $answer = [],
         public array $authority = [],
         public array $additional = [],
+        public string $responseCode = 'NOERROR',
     ) {}
 }

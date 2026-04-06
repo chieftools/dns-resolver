@@ -65,8 +65,8 @@ describe('depth limit', function () {
     it('allows resolution within depth limit', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor, new ResolverConfig(maxDepth: 1));
@@ -102,8 +102,8 @@ describe('direct answer', function () {
     it('resolves a simple A record', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 10,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 10,
         ));
 
         $session = createSession($executor);
@@ -118,8 +118,8 @@ describe('direct answer', function () {
     it('strips trailing dot from domain', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -132,11 +132,11 @@ describe('direct answer', function () {
     it('filters out RRSIG records from answers', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [
                 new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34'),
                 new RawRecord('example.com.', 'IN', 'RRSIG', 300, 'A 13 2 300 20260406 20260404 34505 example.com. fakedata'),
             ],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -150,11 +150,11 @@ describe('direct answer', function () {
     it('deduplicates identical records', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [
                 new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34'),
                 new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34'),
             ],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -169,12 +169,12 @@ describe('multiple types', function () {
     it('queries additional types at the same nameserver', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
         ));
         $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'AAAA', 300, '2606:2800:220:1:248:1893:25c8:1946')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -191,8 +191,8 @@ describe('multiple types', function () {
     it('continues when additional type query throws exception', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
         ));
         // No fixture for AAAA — will throw QueryException
 
@@ -207,8 +207,8 @@ describe('multiple types', function () {
     it('handles additional type returning empty response', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
         ));
         $executor->addFixture('example.com', 'MX', '1.2.3.4', new QueryResult(
             queryTimeMs: 5,
@@ -229,15 +229,15 @@ describe('delegation', function () {
 
         // Root delegates to child
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
             additional: [new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '5.6.7.8')],
+            queryTimeMs: 5,
         ));
 
         // Child has the answer
         $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            queryTimeMs: 10,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 10,
         ));
 
         $session = createSession($executor);
@@ -254,11 +254,11 @@ describe('delegation', function () {
 
         // Delegation with glue records that answer the query directly
         $executor->addFixture('ns1.example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
             additional: [
                 new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
             ],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -273,17 +273,17 @@ describe('delegation', function () {
         $executor = new FixtureExecutor;
 
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
             additional: [new RawRecord('stray.example.com.', 'IN', 'A', 86400, '7.7.7.7')],
+            queryTimeMs: 5,
         ));
         $executor->addFixture('ns1.example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '5.6.7.8')],
+            queryTimeMs: 5,
         ));
         $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            queryTimeMs: 10,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 10,
         ));
 
         $session = createSession($executor, new ResolverConfig(ipv6: false));
@@ -299,8 +299,8 @@ describe('query failure and fallback', function () {
     it('falls back to next nameserver on query failure', function () {
         $fixtures = new FixtureExecutor;
         $fixtures->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            queryTimeMs: 10,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 10,
         ));
 
         $executor = failingExecutor($fixtures, '1.2.3.4');
@@ -334,8 +334,8 @@ describe('query failure and fallback', function () {
     it('emits failure and fallback events', function () {
         $fixtures = new FixtureExecutor;
         $fixtures->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            queryTimeMs: 10,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 10,
         ));
 
         $executor = failingExecutor($fixtures, '1.2.3.4');
@@ -369,8 +369,8 @@ describe('empty response', function () {
     it('returns null for authoritative empty response with no additional results', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('norecords.example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'SOA', 86400, 'ns1.example.com. admin.example.com. 2024 3600 900 604800 86400')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -382,12 +382,12 @@ describe('empty response', function () {
     it('returns results when primary type is empty but additional type has records', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'SOA', 86400, 'ns1.example.com. admin.example.com. 2024 3600 900 604800 86400')],
+            queryTimeMs: 5,
         ));
         $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'AAAA', 300, '2001:db8::1')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -399,20 +399,37 @@ describe('empty response', function () {
     });
 });
 
+describe('NXDOMAIN handling', function () {
+    it('returns NXDOMAIN when the nameserver responds with NXDOMAIN', function () {
+        $executor = new FixtureExecutor;
+        $executor->addFixture('missing.example.com', 'A', '1.2.3.4', new QueryResult(
+            authority: [new RawRecord('example.com.', 'IN', 'SOA', 86400, 'ns1.example.com. admin.example.com. 2024 3600 900 604800 86400')],
+            queryTimeMs: 5,
+            responseCode: 'NXDOMAIN',
+        ));
+
+        $session = createSession($executor);
+        $result  = $session->resolve('missing.example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+
+        expect($result)->toBe('NXDOMAIN');
+        expect($session->getTotalTimeMs())->toBe(5);
+    });
+});
+
 describe('CNAME following', function () {
     it('follows CNAME and resolves the target', function () {
         $executor = new FixtureExecutor;
 
         // Initial query returns a CNAME
         $executor->addFixture('www.example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'example.com.')],
+            queryTimeMs: 5,
         ));
 
         // CNAME target resolution — root delegates
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -431,8 +448,8 @@ describe('CNAME following', function () {
     it('returns CNAME records as-is when querying for CNAME type', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('www.example.com', 'CNAME', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'example.com.')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -447,11 +464,11 @@ describe('CNAME following', function () {
     it('stops following when a response contains a cyclic CNAME chain', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('www.example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [
                 new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'alias.example.com.'),
                 new RawRecord('alias.example.com.', 'IN', 'CNAME', 300, 'www.example.com.'),
             ],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
@@ -474,20 +491,20 @@ describe('ipv6 config', function () {
 
         // Delegation without glue
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
+            queryTimeMs: 5,
         ));
 
         // NS resolution — A query for ns1.example.com (simplified: answer directly from root)
         $executor->addFixture('ns1.example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '5.6.7.8')],
+            queryTimeMs: 5,
         ));
 
         // Final answer
         $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor, new ResolverConfig(ipv6: false));
@@ -507,8 +524,8 @@ describe('events', function () {
     it('emits LOOKUP event with correct details', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 10,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 10,
         ));
 
         $events  = [];
@@ -530,8 +547,8 @@ describe('events', function () {
     it('marks glue nameservers in LOOKUP events', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 10,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 10,
         ));
 
         $events  = [];
@@ -550,13 +567,13 @@ describe('events', function () {
     it('emits DELEGATION event during NS delegation', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
             additional: [new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '5.6.7.8')],
+            queryTimeMs: 5,
         ));
         $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            queryTimeMs: 10,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 10,
         ));
 
         $events  = [];
@@ -575,8 +592,8 @@ describe('events', function () {
     it('emits QUERY event with timing and type information', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 42,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 42,
         ));
 
         $events  = [];
@@ -601,10 +618,11 @@ describe('nameserver resolution', function () {
 
         // Delegation without glue — NS needs address resolution
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.unresolvable.test.')],
-            // No glue records — address resolution will be attempted
+            additional: [], // No glue records — address resolution will be attempted
+            queryTimeMs: 5,
         ));
+
         // No fixtures for ns1.unresolvable.test — resolution fails
 
         $session = createSession($executor);
@@ -618,24 +636,24 @@ describe('nameserver resolution', function () {
 
         // Delegation without glue to two nameservers
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.unresolvable.test.'),
                 new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns2.example.com.'),
             ],
-            // No glue records
+            additional: [], // No glue records
+            queryTimeMs: 5,
         ));
 
         // ns2.example.com can be resolved (fixture matched by prefix)
         $executor->addFixture('ns2.example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('ns2.example.com.', 'IN', 'A', 300, '9.10.11.12')],
+            queryTimeMs: 5,
         ));
 
         // Answer from the resolved nameserver
         $executor->addFixture('example.com', 'A', '9.10.11.12', new QueryResult(
-            queryTimeMs: 5,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
         ));
 
         $session = createSession($executor, new ResolverConfig(ipv6: false));
@@ -648,8 +666,8 @@ describe('nameserver resolution', function () {
     it('emits RESOLVE_FAILURE event when NS resolution fails', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.unresolvable.test.')],
+            queryTimeMs: 5,
         ));
 
         $events  = [];
@@ -678,12 +696,12 @@ describe('total time tracking', function () {
     it('accumulates query time across multiple queries', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            queryTimeMs: 15,
             answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 15,
         ));
         $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
-            queryTimeMs: 20,
             answer: [new RawRecord('example.com.', 'IN', 'AAAA', 300, '2001:db8::1')],
+            queryTimeMs: 20,
         ));
 
         $session = createSession($executor);

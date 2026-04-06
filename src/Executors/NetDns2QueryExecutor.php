@@ -43,19 +43,21 @@ class NetDns2QueryExecutor implements DnsQueryExecutor
             }
 
             return new QueryResult(
-                queryTimeMs: $queryTime,
                 authority: $this->convertSection($response->authority),
                 additional: $this->convertSection($response->additional),
+                queryTimeMs: $queryTime,
+                responseCode: $response->header->rcode->label(),
             );
         }
 
         $queryTime = (int)((hrtime(true) - $startTime) / 1_000_000);
 
         return new QueryResult(
-            queryTimeMs: $queryTime,
             answer: $this->convertSection($response->answer),
             authority: $this->convertSection($response->authority),
             additional: $this->convertSection($response->additional),
+            queryTimeMs: $queryTime,
+            responseCode: $response->header->rcode->label(),
         );
     }
 

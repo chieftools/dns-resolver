@@ -12,7 +12,7 @@ use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 
 class FixtureRecorder implements DnsQueryExecutor
 {
-    /** @var list<array{key: string, query_time_ms: int, answer: list<array<string, mixed>>, authority: list<array<string, mixed>>, additional: list<array<string, mixed>>}> */
+    /** @var list<array{key: string, query_time_ms: int, response_code: string, answer: list<array<string, mixed>>, authority: list<array<string, mixed>>, additional: list<array<string, mixed>>}> */
     private array $recordings = [];
 
     public function __construct(
@@ -26,6 +26,7 @@ class FixtureRecorder implements DnsQueryExecutor
         $this->recordings[] = [
             'key'           => "{$domain}|{$type}|{$nameserverAddr}",
             'query_time_ms' => $result->queryTimeMs,
+            'response_code' => $result->responseCode,
             'answer'        => array_map(self::serializeRecord(...), $result->answer),
             'authority'     => array_map(self::serializeRecord(...), $result->authority),
             'additional'    => array_map(self::serializeRecord(...), $result->additional),
@@ -67,7 +68,7 @@ class FixtureRecorder implements DnsQueryExecutor
     }
 
     /**
-     * @return list<array{key: string, query_time_ms: int, answer: list<array<string, mixed>>, authority: list<array<string, mixed>>, additional: list<array<string, mixed>>}>
+     * @return list<array{key: string, query_time_ms: int, response_code: string, answer: list<array<string, mixed>>, authority: list<array<string, mixed>>, additional: list<array<string, mixed>>}>
      */
     public function getRecordings(): array
     {

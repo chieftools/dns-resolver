@@ -52,18 +52,18 @@ describe('DNSSEC resilience', function () use ($failingExecutorClass) {
 
         // ns2 (10.0.0.2): DNSKEY returns a valid-looking response
         $executor->addFixture('example.com', 'DNSKEY', '10.0.0.2', new QueryResult(
-            queryTimeMs: 1,
             answer: [
                 new RawRecord('example.com.', 'IN', 'DNSKEY', 7200, '257 3 13 dummykey'),
             ],
+            queryTimeMs: 1,
         ));
 
         // ns2: main query returns an answer
         $executor->addFixture('test.example.com', 'A', '10.0.0.2', new QueryResult(
-            queryTimeMs: 1,
             answer: [
                 new RawRecord('test.example.com.', 'IN', 'A', 300, '93.184.216.34'),
             ],
+            queryTimeMs: 1,
         ));
 
         $validator = new DnssecValidator;

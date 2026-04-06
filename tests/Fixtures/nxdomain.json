@@ -45,6 +45,7 @@
     {
         "key": "thisdoesnotexist.example.com|A|192.5.5.241",
         "query_time_ms": 15,
+        "response_code": "NXDOMAIN",
         "answer": [],
         "authority": [
             {

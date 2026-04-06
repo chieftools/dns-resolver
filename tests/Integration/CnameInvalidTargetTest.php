@@ -15,21 +15,21 @@ describe('CNAME with invalid target', function () {
 
         // Root → delegation to example.com
         $executor->addFixture('www.example.com', 'A', '198.41.0.4', new QueryResult(
-            queryTimeMs: 1,
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 172800, 'ns.example.com.'),
             ],
             additional: [
                 new RawRecord('ns.example.com.', 'IN', 'A', 172800, '10.0.0.1'),
             ],
+            queryTimeMs: 1,
         ));
 
         // ns.example.com → CNAME with invalid literal '@' as target
         $executor->addFixture('www.example.com', 'A', '10.0.0.1', new QueryResult(
-            queryTimeMs: 1,
             answer: [
                 new RawRecord('www.example.com.', 'IN', 'CNAME', 300, '@'),
             ],
+            queryTimeMs: 1,
         ));
 
         $resolver = new Resolver(executor: $executor);
@@ -49,21 +49,21 @@ describe('CNAME with invalid target', function () {
         $executor = new FixtureExecutor;
 
         $executor->addFixture('www.example.com', 'A', '198.41.0.4', new QueryResult(
-            queryTimeMs: 1,
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 172800, 'ns.example.com.'),
             ],
             additional: [
                 new RawRecord('ns.example.com.', 'IN', 'A', 172800, '10.0.0.1'),
             ],
+            queryTimeMs: 1,
         ));
 
         // CNAME with just a dot (which becomes empty after rtrim)
         $executor->addFixture('www.example.com', 'A', '10.0.0.1', new QueryResult(
-            queryTimeMs: 1,
             answer: [
                 new RawRecord('www.example.com.', 'IN', 'CNAME', 300, '.'),
             ],
+            queryTimeMs: 1,
         ));
 
         $resolver = new Resolver(executor: $executor);

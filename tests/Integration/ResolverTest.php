@@ -84,7 +84,8 @@ describe('NXDOMAIN', function () {
         $result   = $resolver->resolve('thisdoesnotexist.example.com', 'A', DnssecMode::OFF);
 
         expect($result->isEmpty())->toBeTrue();
-        // The domain exists (example.com) but the subdomain may not — could be empty response
+        expect($result->isNxdomain())->toBeTrue();
+        expect($result->info)->toBe('The domain does not exist (NXDOMAIN).');
     });
 });
 

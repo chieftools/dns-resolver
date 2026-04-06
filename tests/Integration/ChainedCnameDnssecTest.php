@@ -43,32 +43,32 @@ describe('chained CNAME DNSSEC validation', function () {
 
         // Nameserver returns chained CNAMEs with their respective RRSIGs
         $executor->addFixture('www.example.com', 'A', '10.0.0.1', new QueryResult(
-            queryTimeMs: 1,
             answer: [
                 new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'alias.example.com.'),
                 new RawRecord('www.example.com.', 'IN', 'RRSIG', 300, 'CNAME 13 3 300 20270101000000 20260101000000 12345 example.com. dGVzdA=='),
                 new RawRecord('alias.example.com.', 'IN', 'CNAME', 300, 'target.example.com.'),
                 new RawRecord('alias.example.com.', 'IN', 'RRSIG', 300, 'CNAME 13 3 300 20270101000000 20260101000000 12345 example.com. dGVzdA=='),
             ],
+            queryTimeMs: 1,
         ));
 
         // Root → delegation to example.com for CNAME target resolution
         $executor->addFixture('target.example.com', 'A', '198.41.0.4', new QueryResult(
-            queryTimeMs: 1,
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 172800, 'ns.example.com.'),
             ],
             additional: [
                 new RawRecord('ns.example.com.', 'IN', 'A', 172800, '10.0.0.2'),
             ],
+            queryTimeMs: 1,
         ));
 
         // Answer for the final CNAME target
         $executor->addFixture('target.example.com', 'A', '10.0.0.2', new QueryResult(
-            queryTimeMs: 1,
             answer: [
                 new RawRecord('target.example.com.', 'IN', 'A', 300, '93.184.216.34'),
             ],
+            queryTimeMs: 1,
         ));
 
         $events = [];

@@ -35,7 +35,7 @@ class DigQueryExecutor implements DnsQueryExecutor
         }
 
         try {
-            /** @var list<array{query_time?: int, answer_num?: int, answer?: list<array{name: string, class: string, type: string, ttl: int, data: string}>, authority?: list<array{name: string, class: string, type: string, ttl: int, data: string}>, additional?: list<array{name: string, class: string, type: string, ttl: int, data: string}>}> $parsed */
+            /** @var list<array{status?: string, query_time?: int, answer_num?: int, answer?: list<array{name: string, class: string, type: string, ttl: int, data: string}>, authority?: list<array{name: string, class: string, type: string, ttl: int, data: string}>, additional?: list<array{name: string, class: string, type: string, ttl: int, data: string}>}> $parsed */
             $parsed = json_decode($result, true, flags: JSON_THROW_ON_ERROR);
         } catch (JsonException) {
             throw new QueryException('parse error');
@@ -44,10 +44,11 @@ class DigQueryExecutor implements DnsQueryExecutor
         $data = $parsed[0] ?? throw new QueryException('parse error');
 
         return new QueryResult(
-            queryTimeMs: $data['query_time'] ?? 0,
             answer: $this->convertSection($data['answer'] ?? []),
             authority: $this->convertSection($data['authority'] ?? []),
             additional: $this->convertSection($data['additional'] ?? []),
+            queryTimeMs: $data['query_time'] ?? 0,
+            responseCode: strtoupper($data['status'] ?? 'NOERROR'),
         );
     }
 
