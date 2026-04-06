@@ -470,10 +470,16 @@ class ResolutionSession
      */
     private function buildNextNameservers(QueryResult $result, array $authorityNs): array
     {
+        $delegatedHosts = array_fill_keys(array_map(
+            static fn (RawRecord $record): string => strtolower(rtrim($record->data, '.')),
+            $authorityNs,
+        ), true);
+
         $allowedTypes = $this->getAllowedRecursiveLookupTypes();
-        $glueRecords  = array_values(array_filter(
+
+        $glueRecords = array_values(array_filter(
             $result->additional,
-            static fn (RawRecord $r) => in_array($r->type, $allowedTypes, true),
+            static fn (RawRecord $r) => in_array($r->type, $allowedTypes, true) && isset($delegatedHosts[strtolower(rtrim($r->name, '.'))]),
         ));
 
         if ($glueRecords === []) {

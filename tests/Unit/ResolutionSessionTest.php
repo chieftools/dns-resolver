@@ -268,6 +268,31 @@ describe('delegation', function () {
         expect($result)->toHaveCount(1);
         expect($result[0]->data)->toBe('5.6.7.8');
     });
+
+    it('ignores unrelated additional records when building the next nameserver list', function () {
+        $executor = new FixtureExecutor;
+
+        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
+            additional: [new RawRecord('stray.example.com.', 'IN', 'A', 86400, '7.7.7.7')],
+        ));
+        $executor->addFixture('ns1.example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '5.6.7.8')],
+        ));
+        $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
+            queryTimeMs: 10,
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        ));
+
+        $session = createSession($executor, new ResolverConfig(ipv6: false));
+        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+
+        expect($result)->toBeArray();
+        expect($result)->toHaveCount(1);
+        expect($result[0]->data)->toBe('93.184.216.34');
+    });
 });
 
 describe('query failure and fallback', function () {
