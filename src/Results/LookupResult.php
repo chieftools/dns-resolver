@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ChiefTools\DNS\Resolver\Results;
 
 use ChiefTools\DNS\Resolver\Enums\RecordType;
+use ChiefTools\DNS\Resolver\Enums\LookupStatus;
 
 readonly class LookupResult
 {
@@ -15,6 +16,7 @@ readonly class LookupResult
         public array $records,
         public int $timeMs,
         public ?string $info = null,
+        public LookupStatus $status = LookupStatus::SUCCESS,
         public ?DnssecResult $dnssec = null,
     ) {}
 
@@ -25,7 +27,12 @@ readonly class LookupResult
 
     public function isNxdomain(): bool
     {
-        return $this->info !== null && str_contains($this->info, 'NXDOMAIN');
+        return $this->status === LookupStatus::NXDOMAIN;
+    }
+
+    public function isLookupFailed(): bool
+    {
+        return $this->status === LookupStatus::QUERY_FAILED;
     }
 
     /**
@@ -41,8 +48,9 @@ readonly class LookupResult
                 static fn (Record $r) => $r->type->value === $typeValue,
             )),
             timeMs: $this->timeMs,
-            info: $this->info,
+            status: $this->status,
             dnssec: $this->dnssec,
+            info: $this->info,
         );
     }
 }

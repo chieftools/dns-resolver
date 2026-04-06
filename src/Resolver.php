@@ -9,6 +9,7 @@ use ChiefTools\DNS\Resolver\Results\Record;
 use ChiefTools\DNS\Resolver\Data\RootServers;
 use ChiefTools\DNS\Resolver\Enums\DnssecMode;
 use ChiefTools\DNS\Resolver\Enums\RecordType;
+use ChiefTools\DNS\Resolver\Enums\LookupStatus;
 use ChiefTools\DNS\Resolver\Events\ResolverEvent;
 use ChiefTools\DNS\Resolver\Results\DnssecResult;
 use ChiefTools\DNS\Resolver\Results\LookupResult;
@@ -69,15 +70,19 @@ readonly class Resolver
         );
 
         // Build info message for non-result responses
-        $info = null;
+        $status = match (true) {
+            $results === 'NXDOMAIN'     => LookupStatus::NXDOMAIN,
+            $results === 'QUERY_FAILED' => LookupStatus::QUERY_FAILED,
+            is_array($results)          => LookupStatus::SUCCESS,
+            default                     => LookupStatus::NO_RECORDS,
+        };
 
-        if ($results === 'NXDOMAIN') {
-            $info = 'The domain does not exist (NXDOMAIN).';
-        } elseif ($results === 'QUERY_FAILED') {
-            $info = 'The lookup could not be completed because all nameservers failed to respond.';
-        } elseif (!is_array($results)) {
-            $info = 'No records found for the requested ' . (count($types) === 1 ? 'type' : 'types') . '.';
-        }
+        $info = match ($status) {
+            LookupStatus::NXDOMAIN     => 'The domain does not exist.',
+            LookupStatus::QUERY_FAILED => 'The lookup could not be completed because no nameserver responded successfully.',
+            LookupStatus::NO_RECORDS   => 'No records were found for the requested ' . (count($types) === 1 ? 'type' : 'types') . '.',
+            LookupStatus::SUCCESS      => null,
+        };
 
         // Build record DTOs
         $records = [];
@@ -132,8 +137,9 @@ readonly class Resolver
         return new LookupResult(
             records: $records,
             timeMs: $engine->getTotalTimeMs(),
-            info: $info,
+            status: $status,
             dnssec: $dnssecResult,
+            info: $info,
         );
     }
 

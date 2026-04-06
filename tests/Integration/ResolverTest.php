@@ -5,6 +5,7 @@ declare(strict_types=1);
 use ChiefTools\DNS\Resolver\Resolver;
 use ChiefTools\DNS\Resolver\Enums\DnssecMode;
 use ChiefTools\DNS\Resolver\Enums\RecordType;
+use ChiefTools\DNS\Resolver\Enums\LookupStatus;
 use ChiefTools\DNS\Resolver\Results\LookupResult;
 use ChiefTools\DNS\Resolver\Tests\Support\FixtureExecutor;
 
@@ -22,6 +23,7 @@ describe('simple A record lookup', function () {
 
         expect($result)->toBeInstanceOf(LookupResult::class);
         expect($result->isEmpty())->toBeFalse();
+        expect($result->status)->toBe(LookupStatus::SUCCESS);
         expect($result->isNxdomain())->toBeFalse();
         expect($result->timeMs)->toBeGreaterThanOrEqual(0);
 
@@ -84,8 +86,9 @@ describe('NXDOMAIN', function () {
         $result   = $resolver->resolve('thisdoesnotexist.example.com', 'A', DnssecMode::OFF);
 
         expect($result->isEmpty())->toBeTrue();
+        expect($result->status)->toBe(LookupStatus::NXDOMAIN);
         expect($result->isNxdomain())->toBeTrue();
-        expect($result->info)->toBe('The domain does not exist (NXDOMAIN).');
+        expect($result->isLookupFailed())->toBeFalse();
     });
 });
 

@@ -6,6 +6,7 @@ use ChiefTools\DNS\Resolver\Resolver;
 use ChiefTools\DNS\Resolver\ResolverConfig;
 use ChiefTools\DNS\Resolver\Enums\DnssecMode;
 use ChiefTools\DNS\Resolver\Enums\RecordType;
+use ChiefTools\DNS\Resolver\Enums\LookupStatus;
 use ChiefTools\DNS\Resolver\Executors\RawRecord;
 use ChiefTools\DNS\Resolver\Executors\QueryResult;
 use ChiefTools\DNS\Resolver\Enums\RecordValidation;
@@ -185,7 +186,7 @@ describe('unknown record types', function () {
 });
 
 describe('empty and null results', function () {
-    it('returns info about no records when resolution returns null', function () {
+    it('marks no-record lookups with an explicit status', function () {
         $executor = new FixtureExecutor;
         // No fixtures at all — executor will throw QueryException for any query,
         // which makes ResolutionSession return null via handleQueryFailure
@@ -198,10 +199,12 @@ describe('empty and null results', function () {
         $result   = $resolver->resolve('example.com', 'A', DnssecMode::OFF);
 
         expect($result->isEmpty())->toBeTrue();
-        expect($result->info)->toBe('No records found for the requested type.');
+        expect($result->status)->toBe(LookupStatus::NO_RECORDS);
+        expect($result->isNxdomain())->toBeFalse();
+        expect($result->isLookupFailed())->toBeFalse();
     });
 
-    it('uses plural types in info message for multiple types', function () {
+    it('marks multi-type empty lookups with no-record status', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
             queryTimeMs: 5,
@@ -214,10 +217,12 @@ describe('empty and null results', function () {
         $result   = $resolver->resolve('example.com', ['A', 'AAAA'], DnssecMode::OFF);
 
         expect($result->isEmpty())->toBeTrue();
-        expect($result->info)->toBe('No records found for the requested types.');
+        expect($result->status)->toBe(LookupStatus::NO_RECORDS);
+        expect($result->isNxdomain())->toBeFalse();
+        expect($result->isLookupFailed())->toBeFalse();
     });
 
-    it('returns a query failure info message when all nameservers fail', function () {
+    it('marks lookups as failed when all nameservers fail', function () {
         $executor = new class implements DnsQueryExecutor
         {
             public function query(string $domain, string $type, string $nameserverAddr, bool $dnssec = false): QueryResult
@@ -230,7 +235,9 @@ describe('empty and null results', function () {
         $result   = $resolver->resolve('example.com', 'A', DnssecMode::OFF);
 
         expect($result->isEmpty())->toBeTrue();
-        expect($result->info)->toBe('The lookup could not be completed because all nameservers failed to respond.');
+        expect($result->status)->toBe(LookupStatus::QUERY_FAILED);
+        expect($result->isLookupFailed())->toBeTrue();
+        expect($result->isNxdomain())->toBeFalse();
     });
 });
 
@@ -263,6 +270,24 @@ describe('type normalization', function () {
 
         expect($result->records)->toHaveCount(1);
         expect($result->records[0]->type)->toBe(RecordType::A);
+    });
+});
+
+describe('lookup status', function () {
+    it('marks successful lookups explicitly', function () {
+        $executor = new FixtureExecutor;
+        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+            queryTimeMs: 5,
+        ));
+
+        $resolver = new Resolver(executor: $executor);
+        $result   = $resolver->resolve('example.com', 'A', DnssecMode::OFF);
+
+        expect($result->status)->toBe(LookupStatus::SUCCESS);
+        expect($result->isNxdomain())->toBeFalse();
+        expect($result->isLookupFailed())->toBeFalse();
+        expect($result->ofType('A')->status)->toBe(LookupStatus::SUCCESS);
     });
 });
 
