@@ -282,6 +282,11 @@ class ResolutionSession
         $typesToFollow = array_values(array_filter($types, static fn (string $t) => $t !== 'CNAME'));
         $cnameTarget   = rtrim($cnameRecords[count($cnameRecords) - 1]->data, '.');
 
+        // Don't follow CNAME targets that are not valid domain names
+        if (!preg_match('/^([a-zA-Z0-9_]([a-zA-Z0-9_-]*[a-zA-Z0-9_])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/', $cnameTarget)) {
+            return $this->deduplicateRecords($answers);
+        }
+
         $this->emit(new ResolverEvent(
             type: EventType::CNAME,
             message: "Following CNAME to {$cnameTarget}...",
