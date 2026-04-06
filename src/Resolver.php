@@ -26,8 +26,10 @@ readonly class Resolver
         ?DnsQueryExecutor $executor = null,
         ?ResolverConfig $config = null,
     ) {
-        $this->executor = $executor ?? new NetDns2QueryExecutor;
         $this->config   = $config ?? new ResolverConfig;
+        $this->executor = $executor ?? new NetDns2QueryExecutor(
+            timeout: $this->config->timeout,
+        );
     }
 
     /**

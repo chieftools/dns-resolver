@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use ChiefTools\DNS\Resolver\Resolver;
+use ChiefTools\DNS\Resolver\ResolverConfig;
 use ChiefTools\DNS\Resolver\Enums\DnssecMode;
 use ChiefTools\DNS\Resolver\Enums\RecordType;
 use ChiefTools\DNS\Resolver\Executors\RawRecord;
 use ChiefTools\DNS\Resolver\Executors\QueryResult;
 use ChiefTools\DNS\Resolver\Enums\RecordValidation;
 use ChiefTools\DNS\Resolver\Tests\Support\FixtureExecutor;
+use ChiefTools\DNS\Resolver\Executors\NetDns2QueryExecutor;
 
 function resolverWithDirectAnswer(string $domain, string $type, string $ns, QueryResult $result): Resolver
 {
@@ -243,5 +245,26 @@ describe('type normalization', function () {
 
         expect($result->records)->toHaveCount(1);
         expect($result->records[0]->type)->toBe(RecordType::A);
+    });
+});
+
+describe('default executor configuration', function () {
+    it('passes the configured timeout to the default executor', function () {
+        $resolver = new Resolver(config: new ResolverConfig(timeout: 7));
+        $executor = Closure::bind(
+            static fn (Resolver $resolver): mixed => $resolver->executor,
+            null,
+            Resolver::class,
+        )($resolver);
+
+        expect($executor)->toBeInstanceOf(NetDns2QueryExecutor::class);
+
+        $timeout = Closure::bind(
+            static fn (NetDns2QueryExecutor $executor): int => $executor->timeout,
+            null,
+            NetDns2QueryExecutor::class,
+        )($executor);
+
+        expect($timeout)->toBe(7);
     });
 });
