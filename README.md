@@ -21,11 +21,45 @@ composer require chieftools/dns-resolver
 
 ```php
 use ChiefTools\DNS\Resolver\Resolver;
+use ChiefTools\DNS\Resolver\Enums\LookupStatus;
 
 $result = new Resolver()->resolve('example.com', 'A');
 
+if ($result->status === LookupStatus::SUCCESS) {
+    foreach ($result->records as $record) {
+        echo "{$record->name} {$record->ttl} {$record->type->value} {$record->data}\n";
+    }
+}
+```
+
+## Interpreting results
+
+`LookupResult::status` is the machine-readable outcome of the lookup. `info` is only a human-readable message for non-success cases.
+
+```php
+use ChiefTools\DNS\Resolver\Resolver;
+use ChiefTools\DNS\Resolver\Enums\LookupStatus;
+
+$result = new Resolver()->resolve('example.com', 'A');
+
+if ($result->status === LookupStatus::NXDOMAIN) {
+    echo "The domain does not exist.\n";
+} elseif ($result->status === LookupStatus::QUERY_FAILED) {
+    echo "The lookup failed and may succeed on retry.\n";
+} elseif ($result->status === LookupStatus::NO_RECORDS) {
+    echo "The domain exists, but no records were found for that type.\n";
+}
+
+if ($result->isNxdomain()) {
+    // Convenience helper for NXDOMAIN checks
+}
+
+if ($result->isLookupFailed()) {
+    // Convenience helper for transport / nameserver failure checks
+}
+
 foreach ($result->records as $record) {
-    echo "{$record->name} {$record->ttl} {$record->type->value} {$record->data}\n";
+    echo $record->validation->name . "\n"; // SIGNED, FAILED, or UNKNOWN
 }
 ```
 
@@ -60,11 +94,11 @@ foreach ($result->records as $record) {
     echo $record->validation->name; // SIGNED, FAILED, or UNKNOWN
 }
 
-// Strict mode — returns empty results when validation fails
-$result = $resolver->resolve('example.com', 'A', dnssec: DnssecMode::STRICT);
+// Strict mode — clears records when validation fails
+$result = new Resolver()->resolve('example.com', 'A', dnssec: DnssecMode::STRICT);
 
 // Disable DNSSEC entirely
-$result = $resolver->resolve('example.com', 'A', dnssec: DnssecMode::OFF);
+$result = new Resolver()->resolve('example.com', 'A', dnssec: DnssecMode::OFF);
 ```
 
 ## Configuration
@@ -84,6 +118,8 @@ $resolver = new Resolver(
 ## Custom executor
 
 The resolver ships with `NetDns2QueryExecutor` (default) and `DigQueryExecutor`. You can provide your own by implementing the `DnsQueryExecutor` interface.
+
+`DigQueryExecutor` requires external `dig` and `jc` binaries. If you do not need that integration, the default `NetDns2QueryExecutor` is the simpler and faster choice.
 
 ```php
 use ChiefTools\DNS\Resolver\Executors\DigQueryExecutor;
@@ -110,10 +146,11 @@ $result = new Resolver()->resolve('example.com', 'A',
         echo $event->message . "\n";
 
         // Or use structured data
-        // $event->type      — EventType enum (LOOKUP, QUERY, DELEGATION, CNAME, QUERY_FAILURE, ...)
+        // $event->type      — EventType enum (LOOKUP, QUERY, DELEGATION, CNAME, QUERY_FAILURE, NAMESERVER_FALLBACK, RESOLVE_NAMESERVER, RESOLVE_FAILURE)
         // $event->depth     — nesting level for visual indentation
         // $event->domain    — domain being queried
         // $event->nameserver, $event->address, $event->timeMs, etc.
+        // $event->status    — per-step status such as "signed", "unsigned", "invalid", or null on non-query events
     },
 );
 ```
@@ -126,10 +163,11 @@ $result = new Resolver()->resolve('example.com', 'A',
 |---|---|---|
 | `records` | `list<Record>` | Resolved records |
 | `timeMs` | `int` | Total resolution time in milliseconds |
-| `info` | `?string` | Human-readable status (`"NXDOMAIN"`, etc.) |
+| `status` | `LookupStatus` | Final lookup outcome: `SUCCESS`, `NO_RECORDS`, `NXDOMAIN`, or `QUERY_FAILED` |
+| `info` | `?string` | Human-readable message for non-success outcomes or strict DNSSEC failures |
 | `dnssec` | `?DnssecResult` | DNSSEC validation result (null when disabled) |
 
-Methods: `isEmpty()`, `isNxdomain()`, `ofType(RecordType|string)`
+Methods: `isEmpty()`, `isNxdomain()`, `isLookupFailed()`, `ofType(RecordType|string)`
 
 ### `Record`
 
