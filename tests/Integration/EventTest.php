@@ -35,11 +35,10 @@ describe('event system', function () {
         $queryEvents = array_filter($events, fn (ResolverEvent $e) => $e->type === EventType::QUERY);
         expect($queryEvents)->not->toBeEmpty();
 
-        // All events should have a message
-        foreach ($events as $event) {
-            expect($event->message)->not->toBeEmpty();
-            expect($event->depth)->toBeGreaterThanOrEqual(0);
-        }
+        expect(array_filter(
+            $events,
+            fn (ResolverEvent $event): bool => $event->message === '' || $event->depth < 0,
+        ))->toBeEmpty();
     });
 
     it('provides structured data in events', function () {

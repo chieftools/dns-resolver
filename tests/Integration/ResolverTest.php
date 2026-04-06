@@ -30,11 +30,18 @@ describe('simple A record lookup', function () {
         $aRecords = $result->ofType(RecordType::A);
         expect($aRecords->records)->not->toBeEmpty();
 
-        foreach ($aRecords->records as $record) {
-            expect($record->type)->toBe(RecordType::A);
-            expect($record->name)->toContain('example.com');
-            expect(filter_var($record->data, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4))->not->toBeFalse();
-        }
+        expect(array_filter(
+            $aRecords->records,
+            fn ($record) => $record->type !== RecordType::A,
+        ))->toBeEmpty();
+        expect(array_filter(
+            $aRecords->records,
+            fn ($record) => !str_contains($record->name, 'example.com'),
+        ))->toBeEmpty();
+        expect(array_filter(
+            $aRecords->records,
+            fn ($record) => filter_var($record->data, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false,
+        ))->toBeEmpty();
     });
 });
 
@@ -58,9 +65,10 @@ describe('resolve with RecordType enum', function () {
 
         expect($result->isEmpty())->toBeFalse();
 
-        foreach ($result->records as $record) {
-            expect($record->type)->toBe(RecordType::A);
-        }
+        expect(array_filter(
+            $result->records,
+            fn ($record) => $record->type !== RecordType::A,
+        ))->toBeEmpty();
     });
 
     it('accepts a list of RecordType enums', function () {
@@ -100,9 +108,10 @@ describe('ofType filter', function () {
         $filtered = $result->ofType(RecordType::A);
         expect(count($filtered->records))->toBeLessThanOrEqual(count($result->records));
 
-        foreach ($filtered->records as $record) {
-            expect($record->type)->toBe(RecordType::A);
-        }
+        expect(array_filter(
+            $filtered->records,
+            fn ($record) => $record->type !== RecordType::A,
+        ))->toBeEmpty();
     });
 
     it('filters records by string type', function () {
@@ -111,8 +120,9 @@ describe('ofType filter', function () {
 
         $filtered = $result->ofType('A');
 
-        foreach ($filtered->records as $record) {
-            expect($record->type->value)->toBe('A');
-        }
+        expect(array_filter(
+            $filtered->records,
+            fn ($record) => $record->type->value !== 'A',
+        ))->toBeEmpty();
     });
 });
