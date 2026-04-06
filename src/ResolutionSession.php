@@ -280,19 +280,39 @@ class ResolutionSession
     private function followCname(array $cnameRecords, array $answers, array $types, int $depth): array
     {
         $typesToFollow = array_values(array_filter($types, static fn (string $t) => $t !== 'CNAME'));
-        $cnameTarget   = rtrim($cnameRecords[count($cnameRecords) - 1]->data, '.');
 
-        // Don't follow CNAME targets that are not valid domain names
-        if (!preg_match('/^([a-zA-Z0-9_]([a-zA-Z0-9_-]*[a-zA-Z0-9_])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/', $cnameTarget)) {
-            return $this->deduplicateRecords($answers);
+        // Build a lookup map to follow the CNAME chain in order
+        $cnameByName = [];
+
+        foreach ($cnameRecords as $record) {
+            $cnameByName[strtolower(rtrim($record->name, '.'))] = $record;
         }
 
-        $this->emit(new ResolverEvent(
-            type: EventType::CNAME,
-            message: "Following CNAME to {$cnameTarget}...",
-            depth: $depth,
-            domain: $cnameTarget,
-        ));
+        // Walk the chain starting from the first record, emitting events for each hop
+        $cnameTarget = rtrim($cnameRecords[0]->data, '.');
+
+        while (true) {
+            // Don't follow CNAME targets that are not valid domain names
+            if (!preg_match('/^([a-zA-Z0-9_]([a-zA-Z0-9_-]*[a-zA-Z0-9_])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/', $cnameTarget)) {
+                return $this->deduplicateRecords($answers);
+            }
+
+            $this->emit(new ResolverEvent(
+                type: EventType::CNAME,
+                message: "Following CNAME to {$cnameTarget}...",
+                depth: $depth,
+                domain: $cnameTarget,
+            ));
+
+            // If the target is another CNAME in the same response, continue the chain
+            if (isset($cnameByName[strtolower($cnameTarget)])) {
+                $cnameTarget = rtrim($cnameByName[strtolower($cnameTarget)]->data, '.');
+
+                continue;
+            }
+
+            break;
+        }
 
         $cnameResult = $this->resolve(
             $cnameTarget,
@@ -847,22 +867,25 @@ class ResolutionSession
             return null;
         }
 
-        $byType = [];
-        $rrsigs = [];
+        $byRRset = [];
+        $rrsigs  = [];
 
+        // Group records by (name, type) to form proper RRsets — records with
+        // different owner names are distinct RRsets even if they share a type
+        // (e.g. chained CNAME records returned in the same response).
         foreach ($answers as $record) {
             if ($record->type === 'RRSIG') {
                 $parsed = $this->dnssecValidator->parseRrsig($record->data);
 
                 if ($parsed !== null) {
-                    $rrsigs[$parsed['type_covered']][] = $parsed;
+                    $rrsigs[$record->name . '|' . $parsed['type_covered']][] = $parsed;
                 }
             } else {
-                $byType[$record->type][] = $record;
+                $byRRset[$record->name . '|' . $record->type][] = $record;
             }
         }
 
-        if (empty($byType)) {
+        if (empty($byRRset)) {
             return null;
         }
 
@@ -886,7 +909,7 @@ class ResolutionSession
 
         if ($zoneDnskeys === null) {
             if ($this->dnssecValidator->isZoneInvalid($signerZone)) {
-                foreach ($byType as $type => $records) {
+                foreach ($byRRset as $records) {
                     foreach ($records as $record) {
                         $this->dnssecValidator->setRecordValidation(
                             $record->name,
@@ -906,14 +929,15 @@ class ResolutionSession
         $allSigned  = true;
         $anyInvalid = false;
 
-        foreach ($byType as $type => $records) {
-            $hasRrsig  = isset($rrsigs[$type]);
+        foreach ($byRRset as $rrsetKey => $records) {
+            $type      = explode('|', $rrsetKey, 2)[1];
+            $hasRrsig  = isset($rrsigs[$rrsetKey]);
             $validated = false;
 
             if ($hasRrsig) {
                 $signerMatchesZone = false;
 
-                foreach ($rrsigs[$type] as $rrsig) {
+                foreach ($rrsigs[$rrsetKey] as $rrsig) {
                     if ($rrsig['signer'] === $signerZone) {
                         $signerMatchesZone = true;
                     }
