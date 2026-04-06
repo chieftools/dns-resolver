@@ -13,6 +13,7 @@ use ChiefTools\DNS\Resolver\Events\ResolverEvent;
 use ChiefTools\DNS\Resolver\Executors\QueryResult;
 use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;
+use ChiefTools\DNS\Resolver\Dnssec\WireFormatConverter;
 use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 
 /**
@@ -816,18 +817,34 @@ class ResolutionSession
                 if ($dsRrsig !== null) {
                     $delegationStatus = $this->validateDsRrsig($dsRrsig, $dsRecords, $currentZone) ?? 'unsigned';
                 } else {
-                    $delegationStatus = 'unsigned';
+                    if ($this->dnssecValidator->getCachedDnskeys($currentZone) !== null) {
+                        $this->dnssecValidator->markInvalid("DS records for {$delegatedZone} are not signed");
+                        $delegationStatus = 'invalid';
+                    } else {
+                        $delegationStatus = 'unsigned';
+                    }
                 }
 
                 return [$nextDs, $delegationStatus];
             }
 
+            if ($this->dnssecValidator->getCachedDnskeys($currentZone) !== null) {
+                $this->dnssecValidator->markInvalid("failed to parse DS records for {$delegatedZone}");
+
+                return [null, 'invalid'];
+            }
+
             return [null, 'unsigned'];
         }
 
-        // No DS records - zone is unsigned
+        // No DS records - the parent must prove the child is unsigned.
+        $delegationStatus = $this->validateNsecProofOfUnsigned($result->authority, $currentZone, $delegatedZone);
+
+        if ($delegationStatus === 'invalid') {
+            return [null, 'invalid'];
+        }
+
         $this->dnssecValidator->markUnsigned($delegatedZone);
-        $delegationStatus = $this->validateNsecProofOfUnsigned($result->authority, $currentZone);
 
         return [null, $delegationStatus];
     }
@@ -1180,7 +1197,7 @@ class ResolutionSession
     /**
      * @param list<RawRecord> $authority
      */
-    private function validateNsecProofOfUnsigned(array $authority, string $currentZone): ?string
+    private function validateNsecProofOfUnsigned(array $authority, string $currentZone, string $delegatedZone): ?string
     {
         if ($this->dnssecValidator === null) {
             return null;
@@ -1188,15 +1205,16 @@ class ResolutionSession
 
         $nsecRecords  = array_values(array_filter($authority, static fn (RawRecord $r) => in_array($r->type, ['NSEC', 'NSEC3'], true)));
         $rrsigRecords = array_values(array_filter($authority, static fn (RawRecord $r) => $r->type === 'RRSIG'));
-
-        if ($nsecRecords === [] || $rrsigRecords === []) {
-            return 'unsigned';
-        }
-
-        $zoneDnskeys = $this->dnssecValidator->getCachedDnskeys($currentZone);
+        $zoneDnskeys  = $this->dnssecValidator->getCachedDnskeys($currentZone);
 
         if ($zoneDnskeys === null) {
             return 'unsigned';
+        }
+
+        if ($nsecRecords === [] || $rrsigRecords === []) {
+            $this->dnssecValidator->markInvalid("missing authenticated proof that {$delegatedZone} is unsigned");
+
+            return 'invalid';
         }
 
         foreach (['NSEC', 'NSEC3'] as $nsecType) {
@@ -1232,14 +1250,17 @@ class ResolutionSession
 
                     $rrsetArrays = $this->toRawArrays($ownerRecords);
 
-                    if ($this->dnssecValidator->verifyRrsig($rrsig, $rrsetArrays, $signingKey)) {
+                    if ($this->dnssecValidator->verifyRrsig($rrsig, $rrsetArrays, $signingKey)
+                        && $this->provesUnsignedDelegation($ownerRecords, $delegatedZone, $currentZone)) {
                         return 'signed';
                     }
                 }
             }
         }
 
-        return 'unsigned';
+        $this->dnssecValidator->markInvalid("NSEC proof of unsigned delegation failed for {$delegatedZone}");
+
+        return 'invalid';
     }
 
     /**
@@ -1349,5 +1370,118 @@ class ResolutionSession
             'ttl'   => $r->ttl,
             'data'  => $r->data,
         ], $records);
+    }
+
+    /**
+     * @param list<RawRecord> $records
+     */
+    private function provesUnsignedDelegation(array $records, string $delegatedZone, string $currentZone): bool
+    {
+        $record = $records[0] ?? null;
+
+        if ($record === null) {
+            return false;
+        }
+
+        return match ($record->type) {
+            'NSEC'  => $this->nsecProvesUnsignedDelegation($record, $delegatedZone),
+            'NSEC3' => $this->nsec3ProvesUnsignedDelegation($record, $delegatedZone, $currentZone),
+            default => false,
+        };
+    }
+
+    private function nsecProvesUnsignedDelegation(RawRecord $record, string $delegatedZone): bool
+    {
+        if (strtolower(rtrim($record->name, '.')) !== strtolower($delegatedZone)) {
+            return false;
+        }
+
+        $parts = preg_split('/\s+/', trim($record->data));
+
+        if ($parts === false || count($parts) < 2) {
+            return false;
+        }
+
+        $types = array_map('strtoupper', array_slice($parts, 1));
+
+        return in_array('NS', $types, true) && !in_array('DS', $types, true);
+    }
+
+    private function nsec3ProvesUnsignedDelegation(RawRecord $record, string $delegatedZone, string $currentZone): bool
+    {
+        if (!self::nameBelongsToZone($record->name, $currentZone)) {
+            return false;
+        }
+
+        $parts = preg_split('/\s+/', trim($record->data));
+
+        if ($parts === false || count($parts) < 6) {
+            return false;
+        }
+
+        [$hashAlgorithm, , $iterations, $salt] = array_slice($parts, 0, 4);
+        $types                                 = array_map('strtoupper', array_slice($parts, 5));
+
+        if ($hashAlgorithm !== '1' || !ctype_digit($iterations) || !in_array('NS', $types, true) || in_array('DS', $types, true)) {
+            return false;
+        }
+
+        $ownerHash = strtoupper(explode('.', strtolower(rtrim($record->name, '.')), 2)[0]);
+
+        return hash_equals($ownerHash, $this->hashNsec3Owner($delegatedZone, (int)$iterations, $salt));
+    }
+
+    private function hashNsec3Owner(string $name, int $iterations, string $salt): string
+    {
+        $wire = (new WireFormatConverter)->nameToWire(strtolower(rtrim($name, '.')));
+        $salt = $salt === '-' ? '' : hex2bin($salt);
+
+        if ($salt === false) {
+            return '';
+        }
+
+        $hash = sha1($wire . $salt, true);
+
+        for ($i = 0; $i < $iterations; $i++) {
+            $hash = sha1($hash . $salt, true);
+        }
+
+        return self::base32HexEncode($hash);
+    }
+
+    private static function base32HexEncode(string $data): string
+    {
+        $alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
+        $result   = '';
+        $buffer   = 0;
+        $bits     = 0;
+
+        for ($i = 0, $len = strlen($data); $i < $len; $i++) {
+            $buffer = ($buffer << 8) | ord($data[$i]);
+            $bits += 8;
+
+            while ($bits >= 5) {
+                $bits -= 5;
+                $result .= $alphabet[($buffer >> $bits) & 0x1F];
+            }
+        }
+
+        if ($bits > 0) {
+            $result .= $alphabet[($buffer << (5 - $bits)) & 0x1F];
+        }
+
+        return $result;
+    }
+
+    private static function nameBelongsToZone(string $name, string $zone): bool
+    {
+        $normalizedName = strtolower(rtrim($name, '.'));
+        $normalizedZone = strtolower(rtrim($zone, '.'));
+
+        if ($normalizedZone === '') {
+            return true;
+        }
+
+        return $normalizedName === $normalizedZone || str_ends_with($normalizedName, '.' . $normalizedZone);
     }
 }

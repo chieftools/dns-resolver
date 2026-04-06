@@ -298,6 +298,156 @@ describe('delegation', function () {
         expect($result)->toHaveCount(1);
         expect($result[0]->data)->toBe('93.184.216.34');
     });
+
+    it('marks a signed delegation as invalid when DS records are missing an RRSIG', function () {
+        $executor  = new FixtureExecutor;
+        $validator = new DnssecValidator;
+        $validator->cacheDnskeys('example.com', [
+            [
+                'keytag'         => 12345,
+                'algorithm'      => 13,
+                'flags'          => 257,
+                'protocol'       => 3,
+                'public_key'     => 'fake',
+                'public_key_b64' => 'ZmFrZQ==',
+                'name'           => 'example.com',
+                'is_ksk'         => true,
+            ],
+        ]);
+
+        $executor->addFixture('www.child.example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            authority: [
+                new RawRecord('child.example.com.', 'IN', 'NS', 86400, 'ns1.child.example.com.'),
+                new RawRecord('child.example.com.', 'IN', 'DS', 86400, '12345 13 2 AABBCCDD'),
+            ],
+            additional: [
+                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+            ],
+        ));
+        $executor->addFixture('www.child.example.com', 'A', '5.6.7.8', new QueryResult(
+            queryTimeMs: 5,
+        ));
+
+        $session = new ResolutionSession(
+            executor: $executor,
+            config: new ResolverConfig(ipv6: false),
+            dnssecValidator: $validator,
+        );
+
+        $result = $session->resolve(
+            'www.child.example.com',
+            ['A'],
+            [ns('ns1.example.com', '1.2.3.4')],
+            currentZone: 'example.com',
+        );
+
+        expect($result)->toBeNull();
+        expect($validator->getStatus()->value)->toBe('invalid');
+        expect($validator->getErrors())->toContain('DS records for child.example.com are not signed');
+    });
+
+    it('marks an unsigned delegation as invalid when a signed parent omits authenticated denial', function () {
+        $executor  = new FixtureExecutor;
+        $validator = new DnssecValidator;
+        $validator->cacheDnskeys('example.com', [
+            [
+                'keytag'         => 12345,
+                'algorithm'      => 13,
+                'flags'          => 257,
+                'protocol'       => 3,
+                'public_key'     => 'fake',
+                'public_key_b64' => 'ZmFrZQ==',
+                'name'           => 'example.com',
+                'is_ksk'         => true,
+            ],
+        ]);
+
+        $executor->addFixture('www.child.example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            authority: [
+                new RawRecord('child.example.com.', 'IN', 'NS', 86400, 'ns1.child.example.com.'),
+            ],
+            additional: [
+                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+            ],
+        ));
+        $executor->addFixture('www.child.example.com', 'A', '5.6.7.8', new QueryResult(
+            queryTimeMs: 5,
+        ));
+
+        $session = new ResolutionSession(
+            executor: $executor,
+            config: new ResolverConfig(ipv6: false),
+            dnssecValidator: $validator,
+        );
+
+        $result = $session->resolve(
+            'www.child.example.com',
+            ['A'],
+            [ns('ns1.example.com', '1.2.3.4')],
+            currentZone: 'example.com',
+        );
+
+        expect($result)->toBeNull();
+        expect($validator->getStatus()->value)->toBe('invalid');
+        expect($validator->getErrors())->toContain('missing authenticated proof that child.example.com is unsigned');
+    });
+
+    it('marks an unsigned delegation as invalid when the signed denial does not cover the child', function () {
+        $executor  = new FixtureExecutor;
+        $validator = new class extends DnssecValidator
+        {
+            public function verifyRrsig(array $rrsig, array $rrset, array $dnskey): bool
+            {
+                return true;
+            }
+        };
+        $validator->cacheDnskeys('example.com', [
+            [
+                'keytag'         => 12345,
+                'algorithm'      => 13,
+                'flags'          => 257,
+                'protocol'       => 3,
+                'public_key'     => 'fake',
+                'public_key_b64' => 'ZmFrZQ==',
+                'name'           => 'example.com',
+                'is_ksk'         => true,
+            ],
+        ]);
+
+        $executor->addFixture('www.child.example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            authority: [
+                new RawRecord('child.example.com.', 'IN', 'NS', 86400, 'ns1.child.example.com.'),
+                new RawRecord('unrelated.example.com.', 'IN', 'NSEC', 86400, 'zzz.example.com. NS RRSIG NSEC'),
+                new RawRecord('unrelated.example.com.', 'IN', 'RRSIG', 86400, 'NSEC 13 2 86400 20270101000000 20260101000000 12345 example.com. dGVzdA=='),
+            ],
+            additional: [
+                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+            ],
+        ));
+        $executor->addFixture('www.child.example.com', 'A', '5.6.7.8', new QueryResult(
+            queryTimeMs: 5,
+        ));
+
+        $session = new ResolutionSession(
+            executor: $executor,
+            config: new ResolverConfig(ipv6: false),
+            dnssecValidator: $validator,
+        );
+
+        $result = $session->resolve(
+            'www.child.example.com',
+            ['A'],
+            [ns('ns1.example.com', '1.2.3.4')],
+            currentZone: 'example.com',
+        );
+
+        expect($result)->toBeNull();
+        expect($validator->getStatus()->value)->toBe('invalid');
+        expect($validator->getErrors())->toContain('NSEC proof of unsigned delegation failed for child.example.com');
+    });
 });
 
 describe('query failure and fallback', function () {
