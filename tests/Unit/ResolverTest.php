@@ -9,6 +9,8 @@ use ChiefTools\DNS\Resolver\Enums\RecordType;
 use ChiefTools\DNS\Resolver\Executors\RawRecord;
 use ChiefTools\DNS\Resolver\Executors\QueryResult;
 use ChiefTools\DNS\Resolver\Enums\RecordValidation;
+use ChiefTools\DNS\Resolver\Exceptions\QueryException;
+use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 use ChiefTools\DNS\Resolver\Tests\Support\FixtureExecutor;
 use ChiefTools\DNS\Resolver\Executors\NetDns2QueryExecutor;
 
@@ -213,6 +215,22 @@ describe('empty and null results', function () {
 
         expect($result->isEmpty())->toBeTrue();
         expect($result->info)->toBe('No records found for the requested types.');
+    });
+
+    it('returns a query failure info message when all nameservers fail', function () {
+        $executor = new class implements DnsQueryExecutor
+        {
+            public function query(string $domain, string $type, string $nameserverAddr, bool $dnssec = false): QueryResult
+            {
+                throw new QueryException('simulated failure');
+            }
+        };
+
+        $resolver = new Resolver(executor: $executor);
+        $result   = $resolver->resolve('example.com', 'A', DnssecMode::OFF);
+
+        expect($result->isEmpty())->toBeTrue();
+        expect($result->info)->toBe('The lookup could not be completed because all nameservers failed to respond.');
     });
 });
 

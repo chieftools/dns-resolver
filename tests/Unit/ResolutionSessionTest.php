@@ -260,11 +260,11 @@ describe('delegation', function () {
             ],
             queryTimeMs: 5,
         ));
-
         $executor->addFixture('ns1.example.com', 'A', '5.6.7.8', new QueryResult(
             answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '203.0.113.10')],
             queryTimeMs: 7,
         ));
+
         $session = createSession($executor);
         $result  = $session->resolve('ns1.example.com', ['A'], [ns('root.server', '1.2.3.4')]);
 
@@ -472,7 +472,7 @@ describe('query failure and fallback', function () {
         expect($result[0]->data)->toBe('93.184.216.34');
     });
 
-    it('returns null when all nameservers fail', function () {
+    it('returns QUERY_FAILED when all nameservers fail', function () {
         $fixtures = new FixtureExecutor;
         $executor = failingExecutor($fixtures, '1.2.3.4');
         $session  = new ResolutionSession(executor: $executor, config: new ResolverConfig);
@@ -483,7 +483,7 @@ describe('query failure and fallback', function () {
             [ns('ns1.fail.com', '1.2.3.4')],
         );
 
-        expect($result)->toBeNull();
+        expect($result)->toBe('QUERY_FAILED');
     });
 
     it('emits failure and fallback events', function () {

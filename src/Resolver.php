@@ -73,6 +73,8 @@ readonly class Resolver
 
         if ($results === 'NXDOMAIN') {
             $info = 'The domain does not exist (NXDOMAIN).';
+        } elseif ($results === 'QUERY_FAILED') {
+            $info = 'The lookup could not be completed because all nameservers failed to respond.';
         } elseif (!is_array($results)) {
             $info = 'No records found for the requested ' . (count($types) === 1 ? 'type' : 'types') . '.';
         }

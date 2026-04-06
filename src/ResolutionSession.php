@@ -55,7 +55,7 @@ class ResolutionSession
      * @param list<array{host: string, addr: ?string, glue?: bool}>                           $nameservers
      * @param list<array{keytag: int, algorithm: int, digest_type: int, digest: string}>|null $parentDs
      *
-     * @return list<RawRecord>|string|null Returns records, 'NXDOMAIN', or null for empty
+     * @return list<RawRecord>|string|null Returns records, 'NXDOMAIN', 'QUERY_FAILED', or null for empty
      */
     public function resolve(
         string $domain,
@@ -575,7 +575,7 @@ class ResolutionSession
             return $this->resolve($domain, $types, $nextNameservers, $lookups, $depth, $parentDs, $currentZone);
         }
 
-        return null;
+        return 'QUERY_FAILED';
     }
 
     /**
