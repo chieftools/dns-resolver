@@ -418,6 +418,29 @@ describe('CNAME following', function () {
         expect($result[0]->type)->toBe('CNAME');
         expect($result[0]->data)->toBe('example.com.');
     });
+
+    it('stops following when a response contains a cyclic CNAME chain', function () {
+        $executor = new FixtureExecutor;
+        $executor->addFixture('www.example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            answer: [
+                new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'alias.example.com.'),
+                new RawRecord('alias.example.com.', 'IN', 'CNAME', 300, 'www.example.com.'),
+            ],
+        ));
+
+        $session = createSession($executor);
+        $result  = $session->resolve('www.example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+
+        expect($result)->toBeArray();
+        expect($result)->toHaveCount(2);
+
+        $cnameRecords = array_values(array_filter($result, fn (RawRecord $r) => $r->type === 'CNAME'));
+        $aRecords     = array_values(array_filter($result, fn (RawRecord $r) => $r->type === 'A'));
+
+        expect($cnameRecords)->toHaveCount(2);
+        expect($aRecords)->toBeEmpty();
+    });
 });
 
 describe('ipv6 config', function () {

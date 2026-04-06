@@ -294,8 +294,17 @@ class ResolutionSession
 
         // Walk the chain starting from the first record, emitting events for each hop
         $cnameTarget = rtrim($cnameRecords[0]->data, '.');
+        $seenTargets = [];
 
         while (true) {
+            $normalizedTarget = strtolower($cnameTarget);
+
+            if (isset($seenTargets[$normalizedTarget])) {
+                return $this->deduplicateRecords($answers);
+            }
+
+            $seenTargets[$normalizedTarget] = true;
+
             // Don't follow CNAME targets that are not valid domain names
             if (!preg_match('/^([a-zA-Z0-9_]([a-zA-Z0-9_-]*[a-zA-Z0-9_])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/', $cnameTarget)) {
                 return $this->deduplicateRecords($answers);
@@ -309,8 +318,8 @@ class ResolutionSession
             ));
 
             // If the target is another CNAME in the same response, continue the chain
-            if (isset($cnameByName[strtolower($cnameTarget)])) {
-                $cnameTarget = rtrim($cnameByName[strtolower($cnameTarget)]->data, '.');
+            if (isset($cnameByName[$normalizedTarget])) {
+                $cnameTarget = rtrim($cnameByName[$normalizedTarget]->data, '.');
 
                 continue;
             }
