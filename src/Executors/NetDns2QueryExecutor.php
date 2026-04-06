@@ -46,7 +46,7 @@ class NetDns2QueryExecutor implements DnsQueryExecutor
                 authority: $this->convertSection($response->authority),
                 additional: $this->convertSection($response->additional),
                 queryTimeMs: $queryTime,
-                responseCode: $response->header->rcode->label(),
+                responseCode: $response->header->rcode->name,
             );
         }
 
@@ -57,7 +57,7 @@ class NetDns2QueryExecutor implements DnsQueryExecutor
             authority: $this->convertSection($response->authority),
             additional: $this->convertSection($response->additional),
             queryTimeMs: $queryTime,
-            responseCode: $response->header->rcode->label(),
+            responseCode: $response->header->rcode->name,
         );
     }
 
