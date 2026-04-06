@@ -21,12 +21,12 @@ class DigQueryExecutor implements DnsQueryExecutor
         $result = shell_exec(
             sprintf(
                 '%s +norecurse +time=2 +tries=1 %s -t %s -q %s %s | %s --dig',
-                $this->digPath,
+                escapeshellarg($this->digPath),
                 $dnssecFlag,
                 escapeshellarg($type),
                 escapeshellarg($domain),
                 escapeshellarg("@{$nameserverAddr}"),
-                $this->jcPath,
+                escapeshellarg($this->jcPath),
             ),
         );
 
