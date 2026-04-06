@@ -10,6 +10,7 @@ use ChiefTools\DNS\Resolver\Events\ResolverEvent;
 use ChiefTools\DNS\Resolver\Executors\QueryResult;
 use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;
+use ChiefTools\DNS\Resolver\Dnssec\WireFormatConverter;
 use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 use ChiefTools\DNS\Resolver\Tests\Support\FixtureExecutor;
 
@@ -25,6 +26,48 @@ function createSession(FixtureExecutor $executor, ?ResolverConfig $config = null
 function ns(string $host, ?string $addr = null, bool $glue = false): array
 {
     return ['host' => $host, 'addr' => $addr, 'glue' => $glue];
+}
+
+function nsec3Hash(string $name, int $iterations = 0, string $salt = '-'): string
+{
+    $wire = (new WireFormatConverter)->nameToWire(strtolower(rtrim($name, '.')));
+    $salt = $salt === '-' ? '' : hex2bin($salt);
+
+    if ($salt === false) {
+        throw new RuntimeException('Invalid NSEC3 salt in test');
+    }
+
+    $hash = sha1($wire . $salt, true);
+
+    for ($i = 0; $i < $iterations; $i++) {
+        $hash = sha1($hash . $salt, true);
+    }
+
+    return nsec3Base32HexEncode($hash);
+}
+
+function nsec3Base32HexEncode(string $data): string
+{
+    $alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
+    $result   = '';
+    $buffer   = 0;
+    $bits     = 0;
+
+    for ($i = 0, $len = strlen($data); $i < $len; $i++) {
+        $buffer = ($buffer << 8) | ord($data[$i]);
+        $bits += 8;
+
+        while ($bits >= 5) {
+            $bits -= 5;
+            $result .= $alphabet[($buffer >> $bits) & 0x1F];
+        }
+    }
+
+    if ($bits > 0) {
+        $result .= $alphabet[($buffer << (5 - $bits)) & 0x1F];
+    }
+
+    return $result;
 }
 
 /**
@@ -447,6 +490,78 @@ describe('delegation', function () {
         expect($result)->toBeNull();
         expect($validator->getStatus()->value)->toBe('invalid');
         expect($validator->getErrors())->toContain('NSEC proof of unsigned delegation failed for child.example.com');
+    });
+
+    it('accepts NSEC3 opt-out proof for an unsigned delegation under a signed parent', function () {
+        $executor  = new FixtureExecutor;
+        $events    = [];
+        $validator = new class extends DnssecValidator
+        {
+            public function verifyRrsig(array $rrsig, array $rrset, array $dnskey): bool
+            {
+                return true;
+            }
+        };
+        $validator->cacheDnskeys('example.com', [
+            [
+                'keytag'         => 12345,
+                'algorithm'      => 13,
+                'flags'          => 257,
+                'protocol'       => 3,
+                'public_key'     => 'fake',
+                'public_key_b64' => 'ZmFrZQ==',
+                'name'           => 'example.com',
+                'is_ksk'         => true,
+            ],
+        ]);
+
+        $delegatedZone = 'child.example.com';
+        $coveredHash   = nsec3Hash($delegatedZone);
+        $ownerHash     = str_repeat('0', strlen($coveredHash));
+        $nextHash      = str_repeat('V', strlen($coveredHash));
+
+        $executor->addFixture('www.child.example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            authority: [
+                new RawRecord('child.example.com.', 'IN', 'NS', 86400, 'ns1.child.example.com.'),
+                new RawRecord("{$ownerHash}.example.com.", 'IN', 'NSEC3', 86400, "1 1 0 - {$nextHash} A RRSIG"),
+                new RawRecord("{$ownerHash}.example.com.", 'IN', 'RRSIG', 86400, 'NSEC3 13 2 86400 20270101000000 20260101000000 12345 example.com. dGVzdA=='),
+            ],
+            additional: [
+                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+            ],
+        ));
+        $executor->addFixture('www.child.example.com', 'A', '5.6.7.8', new QueryResult(
+            queryTimeMs: 5,
+        ));
+
+        $session = new ResolutionSession(
+            executor: $executor,
+            config: new ResolverConfig(ipv6: false),
+            dnssecValidator: $validator,
+            onEvent: static function (ResolverEvent $event) use (&$events): void {
+                $events[] = $event;
+            },
+        );
+
+        $result = $session->resolve(
+            'www.child.example.com',
+            ['A'],
+            [ns('ns1.example.com', '1.2.3.4')],
+            currentZone: 'example.com',
+        );
+
+        expect($result)->toBeNull();
+        expect($validator->getStatus()->value)->toBe('unsigned');
+        expect($validator->getErrors())->not->toContain('NSEC proof of unsigned delegation failed for child.example.com');
+
+        $queryEvents = array_values(array_filter(
+            $events,
+            static fn (ResolverEvent $event): bool => $event->type === EventType::QUERY,
+        ));
+
+        expect($queryEvents)->not->toBeEmpty();
+        expect($queryEvents[0]->status)->toBe('signed');
     });
 });
 

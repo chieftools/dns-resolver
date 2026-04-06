@@ -1419,16 +1419,45 @@ class ResolutionSession
             return false;
         }
 
-        [$hashAlgorithm, , $iterations, $salt] = array_slice($parts, 0, 4);
-        $types                                 = array_map('strtoupper', array_slice($parts, 5));
+        [$hashAlgorithm, $flags, $iterations, $salt, $nextOwner] = array_slice($parts, 0, 5);
 
-        if ($hashAlgorithm !== '1' || !ctype_digit($iterations) || !in_array('NS', $types, true) || in_array('DS', $types, true)) {
+        $types = array_map('strtoupper', array_slice($parts, 5));
+
+        if ($hashAlgorithm !== '1' || !ctype_digit($flags) || !ctype_digit($iterations)) {
             return false;
         }
 
-        $ownerHash = strtoupper(explode('.', strtolower(rtrim($record->name, '.')), 2)[0]);
+        $ownerHash     = strtoupper(explode('.', strtolower(rtrim($record->name, '.')), 2)[0]);
+        $delegatedHash = $this->hashNsec3Owner($delegatedZone, (int)$iterations, $salt);
+        $optOutEnabled = (((int)$flags) & 0x01) === 0x01;
+        $nextOwnerHash = strtoupper($nextOwner);
 
-        return hash_equals($ownerHash, $this->hashNsec3Owner($delegatedZone, (int)$iterations, $salt));
+        if (hash_equals($ownerHash, $delegatedHash)) {
+            return in_array('NS', $types, true) && !in_array('DS', $types, true);
+        }
+
+        if (!$optOutEnabled) {
+            return false;
+        }
+
+        return $this->nsec3RecordCoversHash($ownerHash, $nextOwnerHash, $delegatedHash);
+    }
+
+    private function nsec3RecordCoversHash(string $ownerHash, string $nextOwnerHash, string $targetHash): bool
+    {
+        if ($ownerHash === $nextOwnerHash) {
+            return true;
+        }
+
+        $compareToOwner = strcmp($targetHash, $ownerHash);
+        $compareToNext  = strcmp($targetHash, $nextOwnerHash);
+        $compareRange   = strcmp($ownerHash, $nextOwnerHash);
+
+        if ($compareRange < 0) {
+            return $compareToOwner > 0 && $compareToNext < 0;
+        }
+
+        return $compareToOwner > 0 || $compareToNext < 0;
     }
 
     private function hashNsec3Owner(string $name, int $iterations, string $salt): string
