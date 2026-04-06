@@ -8,6 +8,7 @@ use ChiefTools\DNS\Resolver\ResolutionSession;
 use ChiefTools\DNS\Resolver\Executors\RawRecord;
 use ChiefTools\DNS\Resolver\Events\ResolverEvent;
 use ChiefTools\DNS\Resolver\Executors\QueryResult;
+use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;
 use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 use ChiefTools\DNS\Resolver\Tests\Support\FixtureExecutor;
@@ -383,6 +384,44 @@ describe('empty response', function () {
         expect($result)->toBeNull();
     });
 
+    it('marks an empty response as invalid when a signed zone returns no authority proof', function () {
+        $executor  = new FixtureExecutor;
+        $validator = new DnssecValidator;
+        $validator->cacheDnskeys('example.com', [
+            [
+                'keytag'         => 12345,
+                'algorithm'      => 13,
+                'flags'          => 257,
+                'protocol'       => 3,
+                'public_key'     => 'fake',
+                'public_key_b64' => 'ZmFrZQ==',
+                'name'           => 'example.com',
+                'is_ksk'         => true,
+            ],
+        ]);
+
+        $executor->addFixture('missing.example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+        ));
+
+        $session = new ResolutionSession(
+            executor: $executor,
+            config: new ResolverConfig,
+            dnssecValidator: $validator,
+        );
+
+        $result = $session->resolve(
+            'missing.example.com',
+            ['A'],
+            [ns('ns1.example.com', '1.2.3.4')],
+            currentZone: 'example.com',
+        );
+
+        expect($result)->toBeNull();
+        expect($validator->getStatus()->value)->toBe('invalid');
+        expect($validator->getErrors())->toContain('empty response is missing denial-of-existence records');
+    });
+
     it('returns results when primary type is empty but additional type has records', function () {
         $executor = new FixtureExecutor;
         $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
@@ -400,6 +439,45 @@ describe('empty response', function () {
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
         expect($result[0]->type)->toBe('AAAA');
+    });
+
+    it('marks an empty response as invalid when a signed zone returns no RRSIG proof', function () {
+        $executor  = new FixtureExecutor;
+        $validator = new DnssecValidator;
+        $validator->cacheDnskeys('example.com', [
+            [
+                'keytag'         => 12345,
+                'algorithm'      => 13,
+                'flags'          => 257,
+                'protocol'       => 3,
+                'public_key'     => 'fake',
+                'public_key_b64' => 'ZmFrZQ==',
+                'name'           => 'example.com',
+                'is_ksk'         => true,
+            ],
+        ]);
+
+        $executor->addFixture('missing.example.com', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            authority: [new RawRecord('example.com.', 'IN', 'SOA', 86400, 'ns1.example.com. admin.example.com. 2024 3600 900 604800 86400')],
+        ));
+
+        $session = new ResolutionSession(
+            executor: $executor,
+            config: new ResolverConfig,
+            dnssecValidator: $validator,
+        );
+
+        $result = $session->resolve(
+            'missing.example.com',
+            ['A'],
+            [ns('ns1.example.com', '1.2.3.4')],
+            currentZone: 'example.com',
+        );
+
+        expect($result)->toBeNull();
+        expect($validator->getStatus()->value)->toBe('invalid');
+        expect($validator->getErrors())->toContain('empty response records are not signed');
     });
 });
 

@@ -1020,10 +1020,22 @@ class ResolutionSession
         $rrsigRecords = array_values(array_filter($authority, static fn (RawRecord $r) => $r->type === 'RRSIG'));
 
         if ($nsecRecords === [] && $soaRecords === []) {
+            if ($this->dnssecValidator->getCachedDnskeys($zone) !== null) {
+                $this->dnssecValidator->markInvalid('empty response is missing denial-of-existence records');
+
+                return 'invalid';
+            }
+
             return null;
         }
 
         if ($rrsigRecords === []) {
+            if ($this->dnssecValidator->getCachedDnskeys($zone) !== null) {
+                $this->dnssecValidator->markInvalid('empty response records are not signed');
+
+                return 'invalid';
+            }
+
             $this->dnssecValidator->markUnsigned($zone);
 
             return 'unsigned';
@@ -1042,6 +1054,12 @@ class ResolutionSession
         }
 
         if ($signerZone === null) {
+            if ($this->dnssecValidator->getCachedDnskeys($zone) !== null) {
+                $this->dnssecValidator->markInvalid('failed to parse empty response RRSIGs');
+
+                return 'invalid';
+            }
+
             $this->dnssecValidator->markUnsigned($zone);
 
             return 'unsigned';
@@ -1148,6 +1166,12 @@ class ResolutionSession
 
                 return 'invalid';
             }
+        }
+
+        if ($this->dnssecValidator->getCachedDnskeys($zone) !== null) {
+            $this->dnssecValidator->markInvalid('no valid RRSIG found for empty response');
+
+            return 'invalid';
         }
 
         return null;
