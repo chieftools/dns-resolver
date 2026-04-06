@@ -431,7 +431,7 @@ class ResolutionSession
         $delegatedZone = strtolower(rtrim($authorityNs[0]->name, '.'));
 
         // DNSSEC: Validate delegation
-        [$nextDs, $delegationStatus] = $this->validateDelegation($result, $delegatedZone, $currentZone);
+        [$nextDs, $delegationStatus] = $this->validateDelegation($result, $delegatedZone, $currentZone, $nameserver['addr']);
 
         $this->emit(new ResolverEvent(
             type: EventType::QUERY,
@@ -790,7 +790,7 @@ class ResolutionSession
     /**
      * @return array{0: list<array{keytag: int, algorithm: int, digest_type: int, digest: string}>|null, 1: string|null}
      */
-    private function validateDelegation(QueryResult $result, string $delegatedZone, string $currentZone): array
+    private function validateDelegation(QueryResult $result, string $delegatedZone, string $currentZone, string $nameserverAddr): array
     {
         if ($this->dnssecValidator === null) {
             return [null, null];
@@ -815,7 +815,7 @@ class ResolutionSession
                 }
 
                 if ($dsRrsig !== null) {
-                    $delegationStatus = $this->validateDsRrsig($dsRrsig, $dsRecords, $currentZone) ?? 'unsigned';
+                    $delegationStatus = $this->validateDsRrsig($dsRrsig, $dsRecords, $nameserverAddr) ?? 'unsigned';
                 } else {
                     if ($this->dnssecValidator->getCachedDnskeys($currentZone) !== null) {
                         $this->dnssecValidator->markInvalid("DS records for {$delegatedZone} are not signed");
@@ -838,7 +838,7 @@ class ResolutionSession
         }
 
         // No DS records - the parent must prove the child is unsigned.
-        $delegationStatus = $this->validateNsecProofOfUnsigned($result->authority, $currentZone, $delegatedZone);
+        $delegationStatus = $this->validateNsecProofOfUnsigned($result->authority, $currentZone, $delegatedZone, $nameserverAddr);
 
         if ($delegationStatus === 'invalid') {
             return [null, 'invalid'];
@@ -852,7 +852,7 @@ class ResolutionSession
     /**
      * @param list<RawRecord> $dsRrsigRecords
      */
-    private function validateDsRrsig(RawRecord $dsRrsigRecord, array $dsRrsigRecords, string $parentZone): ?string
+    private function validateDsRrsig(RawRecord $dsRrsigRecord, array $dsRrsigRecords, string $nameserverAddr): ?string
     {
         if ($this->dnssecValidator === null) {
             return null;
@@ -866,16 +866,25 @@ class ResolutionSession
             return 'invalid';
         }
 
-        $parentDnskeys = $this->dnssecValidator->getCachedDnskeys($parentZone);
+        $signerZone  = $rrsig['signer'];
+        $zoneDnskeys = $this->dnssecValidator->getCachedDnskeys($signerZone);
 
-        if ($parentDnskeys === null) {
-            return null;
+        if ($zoneDnskeys === null) {
+            if ($this->dnssecValidator->isZoneInvalid($signerZone)) {
+                return 'invalid';
+            }
+
+            $zoneDnskeys = $this->fetchAndCacheDnskeys($signerZone, $nameserverAddr);
+
+            if ($zoneDnskeys === null) {
+                return null;
+            }
         }
 
-        $signingKey = $this->dnssecValidator->findSigningKey($rrsig, $parentDnskeys);
+        $signingKey = $this->dnssecValidator->findSigningKey($rrsig, $zoneDnskeys);
 
         if ($signingKey === null) {
-            $this->dnssecValidator->markInvalid("no key found to verify DS RRSIG from {$parentZone}");
+            $this->dnssecValidator->markInvalid("no key found to verify DS RRSIG from {$signerZone}");
 
             return 'invalid';
         }
@@ -883,7 +892,7 @@ class ResolutionSession
         $dsRrset = $this->toRawArrays($dsRrsigRecords);
 
         if (!$this->dnssecValidator->verifyRrsig($rrsig, $dsRrset, $signingKey)) {
-            $this->dnssecValidator->markInvalid("DS RRSIG verification failed from {$parentZone}");
+            $this->dnssecValidator->markInvalid("DS RRSIG verification failed from {$signerZone}");
 
             return 'invalid';
         }
@@ -1197,7 +1206,7 @@ class ResolutionSession
     /**
      * @param list<RawRecord> $authority
      */
-    private function validateNsecProofOfUnsigned(array $authority, string $currentZone, string $delegatedZone): ?string
+    private function validateNsecProofOfUnsigned(array $authority, string $currentZone, string $delegatedZone, string $nameserverAddr): ?string
     {
         if ($this->dnssecValidator === null) {
             return null;
@@ -1215,6 +1224,28 @@ class ResolutionSession
             $this->dnssecValidator->markInvalid("missing authenticated proof that {$delegatedZone} is unsigned");
 
             return 'invalid';
+        }
+
+        $signerZone = $this->findSignerZone($rrsigRecords, ['NSEC', 'NSEC3']);
+
+        if ($signerZone === null) {
+            $this->dnssecValidator->markInvalid("failed to parse authenticated proof that {$delegatedZone} is unsigned");
+
+            return 'invalid';
+        }
+
+        $zoneDnskeys = $this->dnssecValidator->getCachedDnskeys($signerZone);
+
+        if ($zoneDnskeys === null) {
+            if ($this->dnssecValidator->isZoneInvalid($signerZone)) {
+                return 'invalid';
+            }
+
+            $zoneDnskeys = $this->fetchAndCacheDnskeys($signerZone, $nameserverAddr);
+
+            if ($zoneDnskeys === null) {
+                return null;
+            }
         }
 
         foreach (['NSEC', 'NSEC3'] as $nsecType) {
@@ -1238,7 +1269,7 @@ class ResolutionSession
 
                     $rrsig = $this->dnssecValidator->parseRrsig($rrsigRecord->data);
 
-                    if ($rrsig === null || $rrsig['type_covered'] !== $nsecType) {
+                    if ($rrsig === null || $rrsig['type_covered'] !== $nsecType || $rrsig['signer'] !== $signerZone) {
                         continue;
                     }
 
@@ -1261,6 +1292,27 @@ class ResolutionSession
         $this->dnssecValidator->markInvalid("NSEC proof of unsigned delegation failed for {$delegatedZone}");
 
         return 'invalid';
+    }
+
+    /**
+     * @param list<RawRecord> $rrsigRecords
+     * @param list<string>    $typesCovered
+     */
+    private function findSignerZone(array $rrsigRecords, array $typesCovered): ?string
+    {
+        if ($this->dnssecValidator === null) {
+            return null;
+        }
+
+        foreach ($rrsigRecords as $rrsigRecord) {
+            $parsed = $this->dnssecValidator->parseRrsig($rrsigRecord->data);
+
+            if ($parsed !== null && in_array($parsed['type_covered'], $typesCovered, true)) {
+                return $parsed['signer'];
+            }
+        }
+
+        return null;
     }
 
     /**

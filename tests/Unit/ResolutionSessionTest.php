@@ -563,6 +563,91 @@ describe('delegation', function () {
         expect($queryEvents)->not->toBeEmpty();
         expect($queryEvents[0]->status)->toBe('signed');
     });
+
+    it('accepts unsigned delegation proof signed by a closer parent zone than the current zone', function () {
+        $executor  = new FixtureExecutor;
+        $events    = [];
+        $validator = new class extends DnssecValidator
+        {
+            public function verifyRrsig(array $rrsig, array $rrset, array $dnskey): bool
+            {
+                return true;
+            }
+        };
+        $validator->cacheDnskeys('uk', [
+            [
+                'keytag'         => 11111,
+                'algorithm'      => 13,
+                'flags'          => 257,
+                'protocol'       => 3,
+                'public_key'     => 'fake',
+                'public_key_b64' => 'ZmFrZQ==',
+                'name'           => 'uk',
+                'is_ksk'         => true,
+            ],
+        ]);
+        $validator->cacheDnskeys('co.uk', [
+            [
+                'keytag'         => 12345,
+                'algorithm'      => 13,
+                'flags'          => 257,
+                'protocol'       => 3,
+                'public_key'     => 'fake',
+                'public_key_b64' => 'ZmFrZQ==',
+                'name'           => 'co.uk',
+                'is_ksk'         => true,
+            ],
+        ]);
+
+        $delegatedZone = 'example.co.uk';
+        $coveredHash   = nsec3Hash($delegatedZone);
+        $ownerHash     = str_repeat('0', strlen($coveredHash));
+        $nextHash      = str_repeat('V', strlen($coveredHash));
+
+        $executor->addFixture('example.co.uk', 'A', '1.2.3.4', new QueryResult(
+            queryTimeMs: 5,
+            authority: [
+                new RawRecord('example.co.uk.', 'IN', 'NS', 3600, 'ns1.example.net.'),
+                new RawRecord('example.co.uk.', 'IN', 'NS', 3600, 'ns2.example.net.'),
+                new RawRecord("{$ownerHash}.co.uk.", 'IN', 'NSEC3', 3600, "1 1 0 - {$nextHash} A RRSIG"),
+                new RawRecord("{$ownerHash}.co.uk.", 'IN', 'RRSIG', 3600, 'NSEC3 13 2 3600 20270101000000 20260101000000 12345 co.uk. dGVzdA=='),
+            ],
+            additional: [
+                new RawRecord('ns1.example.net.', 'IN', 'A', 3600, '172.64.34.61'),
+            ],
+        ));
+        $executor->addFixture('example.co.uk', 'A', '172.64.34.61', new QueryResult(
+            queryTimeMs: 5,
+        ));
+
+        $session = new ResolutionSession(
+            executor: $executor,
+            config: new ResolverConfig(ipv6: false),
+            dnssecValidator: $validator,
+            onEvent: static function (ResolverEvent $event) use (&$events): void {
+                $events[] = $event;
+            },
+        );
+
+        $result = $session->resolve(
+            'example.co.uk',
+            ['A'],
+            [ns('a.nic.uk', '1.2.3.4')],
+            currentZone: 'uk',
+        );
+
+        expect($result)->toBeNull();
+        expect($validator->getStatus()->value)->toBe('unsigned');
+        expect($validator->getErrors())->not->toContain('NSEC proof of unsigned delegation failed for example.co.uk');
+
+        $queryEvents = array_values(array_filter(
+            $events,
+            static fn (ResolverEvent $event): bool => $event->type === EventType::QUERY,
+        ));
+
+        expect($queryEvents)->not->toBeEmpty();
+        expect($queryEvents[0]->status)->toBe('signed');
+    });
 });
 
 describe('query failure and fallback', function () {
