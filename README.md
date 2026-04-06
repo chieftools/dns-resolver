@@ -76,7 +76,7 @@ $resolver = new Resolver(
     config: new ResolverConfig(
         ipv6: false,     // Disable IPv6 for nameserver resolution (default: true)
         timeout: 5,      // Per-query timeout in seconds (default: 2)
-        maxDepth: 15,    // Maximum delegation depth (default: 10)
+        maxDepth: 15,    // Maximum recursive lookups (default: 10)
     ),
 );
 ```
@@ -110,8 +110,8 @@ $result = new Resolver()->resolve('example.com', 'A',
         echo $event->message . "\n";
 
         // Or use structured data
-        // $event->type      — EventType enum (LOOKUP, QUERY, DELEGATION, CNAME, ...)
-        // $event->depth     — delegation depth (0 = root)
+        // $event->type      — EventType enum (LOOKUP, QUERY, DELEGATION, CNAME, QUERY_FAILURE, ...)
+        // $event->depth     — nesting level for visual indentation
         // $event->domain    — domain being queried
         // $event->nameserver, $event->address, $event->timeMs, etc.
     },
