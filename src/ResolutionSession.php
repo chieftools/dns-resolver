@@ -110,13 +110,13 @@ class ResolutionSession
 
         $this->totalTimeMs += $result->queryTimeMs;
 
-        if ($result->responseCode === 'NXDOMAIN') {
-            return 'NXDOMAIN';
-        }
-
         // Handle answers if present
         if ($result->answer !== []) {
             return $this->handleAnswers($result, $domain, $types, $nameserver, $currentZone, $lookups, $depth);
+        }
+
+        if ($result->responseCode === 'NXDOMAIN') {
+            return 'NXDOMAIN';
         }
 
         // Check for NS delegation

@@ -846,6 +846,32 @@ describe('NXDOMAIN handling', function () {
         expect($result)->toBe('NXDOMAIN');
         expect($session->getTotalTimeMs())->toBe(5);
     });
+
+    it('follows answer records even when the response code is NXDOMAIN', function () {
+        $executor = new FixtureExecutor;
+        $executor->addFixture('www.example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'target.example.net.')],
+            queryTimeMs: 5,
+            responseCode: 'NXDOMAIN',
+        ));
+        $executor->addFixture('target.example.net', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('target.example.net.', 'IN', 'A', 300, '192.0.2.80')],
+            queryTimeMs: 5,
+        ));
+
+        $session = createSession($executor);
+        $result  = $session->resolve('www.example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
+
+        expect($result)->toBeArray();
+
+        $cnameRecords = array_values(array_filter($result, fn (RawRecord $r) => $r->type === 'CNAME'));
+        $aRecords     = array_values(array_filter($result, fn (RawRecord $r) => $r->type === 'A'));
+
+        expect($cnameRecords)->toHaveCount(1);
+        expect($aRecords)->toHaveCount(1);
+        expect($aRecords[0]->data)->toBe('192.0.2.80');
+        expect($session->getTotalTimeMs())->toBe(10);
+    });
 });
 
 describe('CNAME following', function () {
