@@ -26,7 +26,7 @@ function resolverWithDirectAnswer(string $domain, string $type, string $ns, Quer
 describe('record formatting', function () {
     it('formats TXT records by stripping inner quotes and wrapping', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'TXT', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'TXT', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'TXT', 300, 'v=spf1 include:_spf.google.com" "~all')],
             queryTimeMs: 5,
         ));
@@ -41,7 +41,7 @@ describe('record formatting', function () {
 
     it('shortens AAAA records', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'AAAA', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'AAAA', 300, '2001:0db8:0000:0000:0000:0000:0000:0001')],
             queryTimeMs: 5,
         ));
@@ -55,7 +55,7 @@ describe('record formatting', function () {
 
     it('returns invalid IPv6 unchanged', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'AAAA', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'AAAA', 300, 'not-an-ip')],
             queryTimeMs: 5,
         ));
@@ -69,7 +69,7 @@ describe('record formatting', function () {
 
     it('normalizes DS record hex data', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'DS', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'DS', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'DS', 300, '2371 13 2 c988ec42 3e3880eb 8dd8a46f')],
             queryTimeMs: 5,
         ));
@@ -83,7 +83,7 @@ describe('record formatting', function () {
 
     it('normalizes CDS record hex data', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'CDS', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'CDS', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'CDS', 300, '2371 13 2 aabb ccdd')],
             queryTimeMs: 5,
         ));
@@ -97,7 +97,7 @@ describe('record formatting', function () {
 
     it('normalizes SSHFP record hex data', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'SSHFP', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'SSHFP', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'SSHFP', 300, '1 1 aa bb cc dd ee ff')],
             queryTimeMs: 5,
         ));
@@ -111,7 +111,7 @@ describe('record formatting', function () {
 
     it('normalizes TLSA record hex data', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('_443._tcp.example.com', 'TLSA', '1.2.3.4', new QueryResult(
+        $executor->addFixture('_443._tcp.example.com', 'TLSA', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('_443._tcp.example.com.', 'IN', 'TLSA', 300, '3 1 1 aa bb cc')],
             queryTimeMs: 5,
         ));
@@ -125,7 +125,7 @@ describe('record formatting', function () {
 
     it('normalizes SMIMEA record hex data', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('hash._smimecert.example.com', 'SMIMEA', '1.2.3.4', new QueryResult(
+        $executor->addFixture('hash._smimecert.example.com', 'SMIMEA', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('hash._smimecert.example.com.', 'IN', 'SMIMEA', 300, '3 1 1 dd ee ff')],
             queryTimeMs: 5,
         ));
@@ -139,7 +139,7 @@ describe('record formatting', function () {
 
     it('passes through default record types unchanged', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'MX', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'MX', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'MX', 300, '10 mail.example.com.')],
             queryTimeMs: 5,
         ));
@@ -153,7 +153,7 @@ describe('record formatting', function () {
 
     it('returns hex record unchanged when no hex portion exists', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'DS', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'DS', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'DS', 300, '2371 13')],
             queryTimeMs: 5,
         ));
@@ -169,9 +169,9 @@ describe('record formatting', function () {
 describe('unknown record types', function () {
     it('skips records with types not in the RecordType enum', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             answer: [
-                new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34'),
+                new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80'),
                 new RawRecord('example.com.', 'IN', 'UNKNOWNTYPE', 300, 'some data'),
             ],
             queryTimeMs: 5,
@@ -190,7 +190,7 @@ describe('empty and null results', function () {
         $executor = new FixtureExecutor;
         // No fixtures at all — executor will throw QueryException for any query,
         // which makes ResolutionSession return null via handleQueryFailure
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
         ));
         // Empty response with no authority NS → handleEmptyResponse → null
@@ -206,10 +206,10 @@ describe('empty and null results', function () {
 
     it('marks multi-type empty lookups with no-record status', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
         ));
-        $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'AAAA', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
         ));
 
@@ -244,8 +244,8 @@ describe('empty and null results', function () {
 describe('record validation', function () {
     it('sets validation to UNKNOWN when DNSSEC is off', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
 
@@ -260,8 +260,8 @@ describe('record validation', function () {
 describe('type normalization', function () {
     it('normalizes lowercase string types to uppercase', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
 
@@ -276,8 +276,8 @@ describe('type normalization', function () {
 describe('lookup status', function () {
     it('marks successful lookups explicitly', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
 

@@ -42,7 +42,7 @@ describe('chained CNAME DNSSEC validation', function () {
         $executor = new FixtureExecutor;
 
         // Nameserver returns chained CNAMEs with their respective RRSIGs
-        $executor->addFixture('www.example.com', 'A', '10.0.0.1', new QueryResult(
+        $executor->addFixture('www.example.com', 'A', '198.51.100.1', new QueryResult(
             answer: [
                 new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'alias.example.com.'),
                 new RawRecord('www.example.com.', 'IN', 'RRSIG', 300, 'CNAME 13 3 300 20270101000000 20260101000000 12345 example.com. dGVzdA=='),
@@ -53,20 +53,20 @@ describe('chained CNAME DNSSEC validation', function () {
         ));
 
         // Root → delegation to example.com for CNAME target resolution
-        $executor->addFixture('target.example.com', 'A', '198.41.0.4', new QueryResult(
+        $executor->addFixture('target.example.com', 'A', '192.0.2.4', new QueryResult(
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 172800, 'ns.example.com.'),
             ],
             additional: [
-                new RawRecord('ns.example.com.', 'IN', 'A', 172800, '10.0.0.2'),
+                new RawRecord('ns.example.com.', 'IN', 'A', 172800, '198.51.100.2'),
             ],
             queryTimeMs: 1,
         ));
 
         // Answer for the final CNAME target
-        $executor->addFixture('target.example.com', 'A', '10.0.0.2', new QueryResult(
+        $executor->addFixture('target.example.com', 'A', '198.51.100.2', new QueryResult(
             answer: [
-                new RawRecord('target.example.com.', 'IN', 'A', 300, '93.184.216.34'),
+                new RawRecord('target.example.com.', 'IN', 'A', 300, '192.0.2.80'),
             ],
             queryTimeMs: 1,
         ));
@@ -85,7 +85,7 @@ describe('chained CNAME DNSSEC validation', function () {
         $result = $session->resolve(
             'www.example.com',
             ['A'],
-            [['host' => 'ns.example.com', 'addr' => '10.0.0.1', 'glue' => true]],
+            [['host' => 'ns.example.com', 'addr' => '198.51.100.1', 'glue' => true]],
             currentZone: 'example.com',
         );
 

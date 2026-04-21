@@ -14,42 +14,42 @@ describe('CNAME with out-of-zone records', function () {
         $executor = new FixtureExecutor;
 
         // Root → delegation to example.com
-        $executor->addFixture('alias.example.com', 'A', '198.41.0.4', new QueryResult(
+        $executor->addFixture('alias.example.com', 'A', '192.0.2.4', new QueryResult(
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 172800, 'ns.example.com.'),
             ],
             additional: [
-                new RawRecord('ns.example.com.', 'IN', 'A', 172800, '10.0.0.1'),
+                new RawRecord('ns.example.com.', 'IN', 'A', 172800, '198.51.100.1'),
             ],
             queryTimeMs: 1,
         ));
 
         // ns.example.com → CNAME with out-of-zone A record included
         // This simulates a nameserver that helpfully includes the CNAME target's A record.
-        $executor->addFixture('alias.example.com', 'A', '10.0.0.1', new QueryResult(
+        $executor->addFixture('alias.example.com', 'A', '198.51.100.1', new QueryResult(
             answer: [
                 new RawRecord('alias.example.com.', 'IN', 'CNAME', 300, 'target.other.com.'),
-                new RawRecord('target.other.com.', 'IN', 'A', 300, '10.99.99.99'),
+                new RawRecord('target.other.com.', 'IN', 'A', 300, '203.0.113.99'),
             ],
             queryTimeMs: 1,
         ));
 
         // CNAME following resolves target.other.com from root
         // Root → delegation to other.com
-        $executor->addFixture('target.other.com', 'A', '198.41.0.4', new QueryResult(
+        $executor->addFixture('target.other.com', 'A', '192.0.2.4', new QueryResult(
             authority: [
                 new RawRecord('other.com.', 'IN', 'NS', 172800, 'ns.other.com.'),
             ],
             additional: [
-                new RawRecord('ns.other.com.', 'IN', 'A', 172800, '10.0.0.2'),
+                new RawRecord('ns.other.com.', 'IN', 'A', 172800, '198.51.100.2'),
             ],
             queryTimeMs: 1,
         ));
 
         // ns.other.com → the real A record (different IP from the out-of-zone one)
-        $executor->addFixture('target.other.com', 'A', '10.0.0.2', new QueryResult(
+        $executor->addFixture('target.other.com', 'A', '198.51.100.2', new QueryResult(
             answer: [
-                new RawRecord('target.other.com.', 'IN', 'A', 300, '10.1.2.3'),
+                new RawRecord('target.other.com.', 'IN', 'A', 300, '203.0.113.3'),
             ],
             queryTimeMs: 1,
         ));
@@ -65,6 +65,6 @@ describe('CNAME with out-of-zone records', function () {
         // Should have A record from the proper CNAME resolution, not the out-of-zone one
         $aRecords = $result->ofType(RecordType::A);
         expect($aRecords->records)->toHaveCount(1);
-        expect($aRecords->records[0]->data)->toBe('10.1.2.3');
+        expect($aRecords->records[0]->data)->toBe('203.0.113.3');
     });
 });

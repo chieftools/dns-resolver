@@ -198,17 +198,17 @@ describe('status management', function () {
 
 describe('record validation tracking', function () {
     it('tracks per-record validation', function () {
-        $this->validator->setRecordValidation('example.com.', 'A', '1.2.3.4', true);
-        expect($this->validator->getRecordValidation('example.com.', 'A', '1.2.3.4'))->toBeTrue();
+        $this->validator->setRecordValidation('example.com.', 'A', '192.0.2.1', true);
+        expect($this->validator->getRecordValidation('example.com.', 'A', '192.0.2.1'))->toBeTrue();
     });
 
     it('returns null for untracked records', function () {
-        expect($this->validator->getRecordValidation('unknown.com.', 'A', '1.2.3.4'))->toBeNull();
+        expect($this->validator->getRecordValidation('unknown.com.', 'A', '192.0.2.1'))->toBeNull();
     });
 
     it('tracks failed validation', function () {
-        $this->validator->setRecordValidation('example.com.', 'A', '1.2.3.4', false);
-        expect($this->validator->getRecordValidation('example.com.', 'A', '1.2.3.4'))->toBeFalse();
+        $this->validator->setRecordValidation('example.com.', 'A', '192.0.2.1', false);
+        expect($this->validator->getRecordValidation('example.com.', 'A', '192.0.2.1'))->toBeFalse();
     });
 });
 

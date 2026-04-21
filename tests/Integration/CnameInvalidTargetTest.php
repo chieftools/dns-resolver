@@ -14,18 +14,18 @@ describe('CNAME with invalid target', function () {
         $executor = new FixtureExecutor;
 
         // Root → delegation to example.com
-        $executor->addFixture('www.example.com', 'A', '198.41.0.4', new QueryResult(
+        $executor->addFixture('www.example.com', 'A', '192.0.2.4', new QueryResult(
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 172800, 'ns.example.com.'),
             ],
             additional: [
-                new RawRecord('ns.example.com.', 'IN', 'A', 172800, '10.0.0.1'),
+                new RawRecord('ns.example.com.', 'IN', 'A', 172800, '198.51.100.1'),
             ],
             queryTimeMs: 1,
         ));
 
         // ns.example.com → CNAME with invalid literal '@' as target
-        $executor->addFixture('www.example.com', 'A', '10.0.0.1', new QueryResult(
+        $executor->addFixture('www.example.com', 'A', '198.51.100.1', new QueryResult(
             answer: [
                 new RawRecord('www.example.com.', 'IN', 'CNAME', 300, '@'),
             ],
@@ -48,18 +48,18 @@ describe('CNAME with invalid target', function () {
     it('does not follow a CNAME with an empty target', function () {
         $executor = new FixtureExecutor;
 
-        $executor->addFixture('www.example.com', 'A', '198.41.0.4', new QueryResult(
+        $executor->addFixture('www.example.com', 'A', '192.0.2.4', new QueryResult(
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 172800, 'ns.example.com.'),
             ],
             additional: [
-                new RawRecord('ns.example.com.', 'IN', 'A', 172800, '10.0.0.1'),
+                new RawRecord('ns.example.com.', 'IN', 'A', 172800, '198.51.100.1'),
             ],
             queryTimeMs: 1,
         ));
 
         // CNAME with just a dot (which becomes empty after rtrim)
-        $executor->addFixture('www.example.com', 'A', '10.0.0.1', new QueryResult(
+        $executor->addFixture('www.example.com', 'A', '198.51.100.1', new QueryResult(
             answer: [
                 new RawRecord('www.example.com.', 'IN', 'CNAME', 300, '.'),
             ],

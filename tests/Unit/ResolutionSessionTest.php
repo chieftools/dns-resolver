@@ -100,7 +100,7 @@ describe('depth limit', function () {
         $session  = createSession($executor, new ResolverConfig(maxDepth: 0));
 
         // Lookups check is $lookups > maxDepth, so lookups=1 with maxDepth=0 triggers it
-        expect(fn () => $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')], lookups: 1))->toThrow(
+        expect(fn () => $session->resolve('example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')], lookups: 1))->toThrow(
             RuntimeException::class,
             'Too many recursive lookups!',
         );
@@ -108,14 +108,14 @@ describe('depth limit', function () {
 
     it('allows resolution within depth limit', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor, new ResolverConfig(maxDepth: 1));
 
-        $result = $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result = $session->resolve('example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -136,7 +136,7 @@ describe('empty inputs', function () {
         $executor = new FixtureExecutor;
         $session  = createSession($executor);
 
-        $result = $session->resolve('example.com', [], [ns('ns1.example.com', '1.2.3.4')]);
+        $result = $session->resolve('example.com', [], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeNull();
     });
@@ -145,29 +145,29 @@ describe('empty inputs', function () {
 describe('direct answer', function () {
     it('resolves a simple A record', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 10,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
-        expect($result[0]->data)->toBe('93.184.216.34');
+        expect($result[0]->data)->toBe('192.0.2.80');
         expect($session->getTotalTimeMs())->toBe(10);
     });
 
     it('strips trailing dot from domain', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com.', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('example.com.', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -175,16 +175,16 @@ describe('direct answer', function () {
 
     it('filters out RRSIG records from answers', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             answer: [
-                new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34'),
+                new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80'),
                 new RawRecord('example.com.', 'IN', 'RRSIG', 300, 'A 13 2 300 20260406 20260404 34505 example.com. fakedata'),
             ],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -193,16 +193,16 @@ describe('direct answer', function () {
 
     it('deduplicates identical records', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             answer: [
-                new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34'),
-                new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34'),
+                new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80'),
+                new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80'),
             ],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -212,17 +212,17 @@ describe('direct answer', function () {
 describe('multiple types', function () {
     it('queries additional types at the same nameserver', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
-        $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'AAAA', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'AAAA', 300, '2606:2800:220:1:248:1893:25c8:1946')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A', 'AAAA'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A', 'AAAA'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(2);
@@ -234,14 +234,14 @@ describe('multiple types', function () {
 
     it('continues when additional type query throws exception', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
         // No fixture for AAAA — will throw QueryException
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A', 'AAAA'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A', 'AAAA'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -250,16 +250,16 @@ describe('multiple types', function () {
 
     it('handles additional type returning empty response', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
-        $executor->addFixture('example.com', 'MX', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'MX', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A', 'MX'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A', 'MX'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -272,44 +272,44 @@ describe('delegation', function () {
         $executor = new FixtureExecutor;
 
         // Root delegates to child
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
-            additional: [new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '5.6.7.8')],
+            additional: [new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '192.0.2.2')],
             queryTimeMs: 5,
         ));
 
         // Child has the answer
-        $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.2', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 10,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
-        expect($result[0]->data)->toBe('93.184.216.34');
+        expect($result[0]->data)->toBe('192.0.2.80');
         expect($session->getTotalTimeMs())->toBe(15);
     });
 
     it('prefers the child zone answer over matching parent glue', function () {
         $executor = new FixtureExecutor;
 
-        $executor->addFixture('ns1.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('ns1.example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
             additional: [
-                new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+                new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '192.0.2.2'),
             ],
             queryTimeMs: 5,
         ));
-        $executor->addFixture('ns1.example.com', 'A', '5.6.7.8', new QueryResult(
+        $executor->addFixture('ns1.example.com', 'A', '192.0.2.2', new QueryResult(
             answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '203.0.113.10')],
             queryTimeMs: 7,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('ns1.example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+        $result  = $session->resolve('ns1.example.com', ['A'], [ns('root.server', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -320,26 +320,26 @@ describe('delegation', function () {
     it('ignores unrelated additional records when building the next nameserver list', function () {
         $executor = new FixtureExecutor;
 
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
             additional: [new RawRecord('stray.example.com.', 'IN', 'A', 86400, '7.7.7.7')],
             queryTimeMs: 5,
         ));
-        $executor->addFixture('ns1.example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '5.6.7.8')],
+        $executor->addFixture('ns1.example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '192.0.2.2')],
             queryTimeMs: 5,
         ));
-        $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.2', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 10,
         ));
 
         $session = createSession($executor, new ResolverConfig(ipv6: false));
-        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
-        expect($result[0]->data)->toBe('93.184.216.34');
+        expect($result[0]->data)->toBe('192.0.2.80');
     });
 
     it('marks a signed delegation as invalid when DS records are missing an RRSIG', function () {
@@ -358,17 +358,17 @@ describe('delegation', function () {
             ],
         ]);
 
-        $executor->addFixture('www.child.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('www.child.example.com', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
             authority: [
                 new RawRecord('child.example.com.', 'IN', 'NS', 86400, 'ns1.child.example.com.'),
                 new RawRecord('child.example.com.', 'IN', 'DS', 86400, '12345 13 2 AABBCCDD'),
             ],
             additional: [
-                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '192.0.2.2'),
             ],
         ));
-        $executor->addFixture('www.child.example.com', 'A', '5.6.7.8', new QueryResult(
+        $executor->addFixture('www.child.example.com', 'A', '192.0.2.2', new QueryResult(
             queryTimeMs: 5,
         ));
 
@@ -381,7 +381,7 @@ describe('delegation', function () {
         $result = $session->resolve(
             'www.child.example.com',
             ['A'],
-            [ns('ns1.example.com', '1.2.3.4')],
+            [ns('ns1.example.com', '192.0.2.1')],
             currentZone: 'example.com',
         );
 
@@ -406,16 +406,16 @@ describe('delegation', function () {
             ],
         ]);
 
-        $executor->addFixture('www.child.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('www.child.example.com', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
             authority: [
                 new RawRecord('child.example.com.', 'IN', 'NS', 86400, 'ns1.child.example.com.'),
             ],
             additional: [
-                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '192.0.2.2'),
             ],
         ));
-        $executor->addFixture('www.child.example.com', 'A', '5.6.7.8', new QueryResult(
+        $executor->addFixture('www.child.example.com', 'A', '192.0.2.2', new QueryResult(
             queryTimeMs: 5,
         ));
 
@@ -428,7 +428,7 @@ describe('delegation', function () {
         $result = $session->resolve(
             'www.child.example.com',
             ['A'],
-            [ns('ns1.example.com', '1.2.3.4')],
+            [ns('ns1.example.com', '192.0.2.1')],
             currentZone: 'example.com',
         );
 
@@ -459,7 +459,7 @@ describe('delegation', function () {
             ],
         ]);
 
-        $executor->addFixture('www.child.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('www.child.example.com', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
             authority: [
                 new RawRecord('child.example.com.', 'IN', 'NS', 86400, 'ns1.child.example.com.'),
@@ -467,10 +467,10 @@ describe('delegation', function () {
                 new RawRecord('unrelated.example.com.', 'IN', 'RRSIG', 86400, 'NSEC 13 2 86400 20270101000000 20260101000000 12345 example.com. dGVzdA=='),
             ],
             additional: [
-                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '192.0.2.2'),
             ],
         ));
-        $executor->addFixture('www.child.example.com', 'A', '5.6.7.8', new QueryResult(
+        $executor->addFixture('www.child.example.com', 'A', '192.0.2.2', new QueryResult(
             queryTimeMs: 5,
         ));
 
@@ -483,7 +483,7 @@ describe('delegation', function () {
         $result = $session->resolve(
             'www.child.example.com',
             ['A'],
-            [ns('ns1.example.com', '1.2.3.4')],
+            [ns('ns1.example.com', '192.0.2.1')],
             currentZone: 'example.com',
         );
 
@@ -520,7 +520,7 @@ describe('delegation', function () {
         $ownerHash     = str_repeat('0', strlen($coveredHash));
         $nextHash      = str_repeat('V', strlen($coveredHash));
 
-        $executor->addFixture('www.child.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('www.child.example.com', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
             authority: [
                 new RawRecord('child.example.com.', 'IN', 'NS', 86400, 'ns1.child.example.com.'),
@@ -528,10 +528,10 @@ describe('delegation', function () {
                 new RawRecord("{$ownerHash}.example.com.", 'IN', 'RRSIG', 86400, 'NSEC3 13 2 86400 20270101000000 20260101000000 12345 example.com. dGVzdA=='),
             ],
             additional: [
-                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '5.6.7.8'),
+                new RawRecord('ns1.child.example.com.', 'IN', 'A', 86400, '192.0.2.2'),
             ],
         ));
-        $executor->addFixture('www.child.example.com', 'A', '5.6.7.8', new QueryResult(
+        $executor->addFixture('www.child.example.com', 'A', '192.0.2.2', new QueryResult(
             queryTimeMs: 5,
         ));
 
@@ -547,7 +547,7 @@ describe('delegation', function () {
         $result = $session->resolve(
             'www.child.example.com',
             ['A'],
-            [ns('ns1.example.com', '1.2.3.4')],
+            [ns('ns1.example.com', '192.0.2.1')],
             currentZone: 'example.com',
         );
 
@@ -604,7 +604,7 @@ describe('delegation', function () {
         $ownerHash     = str_repeat('0', strlen($coveredHash));
         $nextHash      = str_repeat('V', strlen($coveredHash));
 
-        $executor->addFixture('example.co.uk', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.co.uk', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
             authority: [
                 new RawRecord('example.co.uk.', 'IN', 'NS', 3600, 'ns1.example.net.'),
@@ -613,10 +613,10 @@ describe('delegation', function () {
                 new RawRecord("{$ownerHash}.co.uk.", 'IN', 'RRSIG', 3600, 'NSEC3 13 2 3600 20270101000000 20260101000000 12345 co.uk. dGVzdA=='),
             ],
             additional: [
-                new RawRecord('ns1.example.net.', 'IN', 'A', 3600, '172.64.34.61'),
+                new RawRecord('ns1.example.net.', 'IN', 'A', 3600, '203.0.113.61'),
             ],
         ));
-        $executor->addFixture('example.co.uk', 'A', '172.64.34.61', new QueryResult(
+        $executor->addFixture('example.co.uk', 'A', '203.0.113.61', new QueryResult(
             queryTimeMs: 5,
         ));
 
@@ -632,7 +632,7 @@ describe('delegation', function () {
         $result = $session->resolve(
             'example.co.uk',
             ['A'],
-            [ns('a.nic.uk', '1.2.3.4')],
+            [ns('a.nic.uk', '192.0.2.1')],
             currentZone: 'uk',
         );
 
@@ -653,34 +653,34 @@ describe('delegation', function () {
 describe('query failure and fallback', function () {
     it('falls back to next nameserver on query failure', function () {
         $fixtures = new FixtureExecutor;
-        $fixtures->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $fixtures->addFixture('example.com', 'A', '192.0.2.2', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 10,
         ));
 
-        $executor = failingExecutor($fixtures, '1.2.3.4');
+        $executor = failingExecutor($fixtures, '192.0.2.1');
         $session  = new ResolutionSession(executor: $executor, config: new ResolverConfig);
 
         $result = $session->resolve(
             'example.com',
             ['A'],
-            [ns('ns1.fail.com', '1.2.3.4'), ns('ns2.ok.com', '5.6.7.8')],
+            [ns('ns1.fail.com', '192.0.2.1'), ns('ns2.ok.com', '192.0.2.2')],
         );
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
-        expect($result[0]->data)->toBe('93.184.216.34');
+        expect($result[0]->data)->toBe('192.0.2.80');
     });
 
     it('returns QUERY_FAILED when all nameservers fail', function () {
         $fixtures = new FixtureExecutor;
-        $executor = failingExecutor($fixtures, '1.2.3.4');
+        $executor = failingExecutor($fixtures, '192.0.2.1');
         $session  = new ResolutionSession(executor: $executor, config: new ResolverConfig);
 
         $result = $session->resolve(
             'example.com',
             ['A'],
-            [ns('ns1.fail.com', '1.2.3.4')],
+            [ns('ns1.fail.com', '192.0.2.1')],
         );
 
         expect($result)->toBe('QUERY_FAILED');
@@ -688,12 +688,12 @@ describe('query failure and fallback', function () {
 
     it('emits failure and fallback events', function () {
         $fixtures = new FixtureExecutor;
-        $fixtures->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $fixtures->addFixture('example.com', 'A', '192.0.2.2', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 10,
         ));
 
-        $executor = failingExecutor($fixtures, '1.2.3.4');
+        $executor = failingExecutor($fixtures, '192.0.2.1');
 
         $events  = [];
         $session = new ResolutionSession(
@@ -707,12 +707,12 @@ describe('query failure and fallback', function () {
         $session->resolve(
             'example.com',
             ['A'],
-            [ns('ns1.fail.com', '1.2.3.4'), ns('ns2.ok.com', '5.6.7.8')],
+            [ns('ns1.fail.com', '192.0.2.1'), ns('ns2.ok.com', '192.0.2.2')],
         );
 
         $failureEvents = array_values(array_filter($events, fn (ResolverEvent $e) => $e->type === EventType::QUERY_FAILURE));
         expect($failureEvents)->not->toBeEmpty();
-        expect($failureEvents[0]->address)->toBe('1.2.3.4');
+        expect($failureEvents[0]->address)->toBe('192.0.2.1');
 
         $fallbackEvents = array_values(array_filter($events, fn (ResolverEvent $e) => $e->type === EventType::NAMESERVER_FALLBACK));
         expect($fallbackEvents)->not->toBeEmpty();
@@ -723,13 +723,13 @@ describe('query failure and fallback', function () {
 describe('empty response', function () {
     it('returns null for authoritative empty response with no additional results', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('norecords.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('norecords.example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'SOA', 86400, 'ns1.example.com. admin.example.com. 2024 3600 900 604800 86400')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('norecords.example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('norecords.example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeNull();
     });
@@ -750,7 +750,7 @@ describe('empty response', function () {
             ],
         ]);
 
-        $executor->addFixture('missing.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('missing.example.com', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
         ));
 
@@ -763,7 +763,7 @@ describe('empty response', function () {
         $result = $session->resolve(
             'missing.example.com',
             ['A'],
-            [ns('ns1.example.com', '1.2.3.4')],
+            [ns('ns1.example.com', '192.0.2.1')],
             currentZone: 'example.com',
         );
 
@@ -774,17 +774,17 @@ describe('empty response', function () {
 
     it('returns results when primary type is empty but additional type has records', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'SOA', 86400, 'ns1.example.com. admin.example.com. 2024 3600 900 604800 86400')],
             queryTimeMs: 5,
         ));
-        $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'AAAA', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'AAAA', 300, '2001:db8::1')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A', 'AAAA'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A', 'AAAA'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -807,7 +807,7 @@ describe('empty response', function () {
             ],
         ]);
 
-        $executor->addFixture('missing.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('missing.example.com', 'A', '192.0.2.1', new QueryResult(
             queryTimeMs: 5,
             authority: [new RawRecord('example.com.', 'IN', 'SOA', 86400, 'ns1.example.com. admin.example.com. 2024 3600 900 604800 86400')],
         ));
@@ -821,7 +821,7 @@ describe('empty response', function () {
         $result = $session->resolve(
             'missing.example.com',
             ['A'],
-            [ns('ns1.example.com', '1.2.3.4')],
+            [ns('ns1.example.com', '192.0.2.1')],
             currentZone: 'example.com',
         );
 
@@ -834,14 +834,14 @@ describe('empty response', function () {
 describe('NXDOMAIN handling', function () {
     it('returns NXDOMAIN when the nameserver responds with NXDOMAIN', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('missing.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('missing.example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'SOA', 86400, 'ns1.example.com. admin.example.com. 2024 3600 900 604800 86400')],
             queryTimeMs: 5,
             responseCode: 'NXDOMAIN',
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('missing.example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('missing.example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBe('NXDOMAIN');
         expect($session->getTotalTimeMs())->toBe(5);
@@ -879,19 +879,19 @@ describe('CNAME following', function () {
         $executor = new FixtureExecutor;
 
         // Initial query returns a CNAME
-        $executor->addFixture('www.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('www.example.com', 'A', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'example.com.')],
             queryTimeMs: 5,
         ));
 
         // CNAME target resolution — root delegates
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('www.example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('www.example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
 
@@ -900,18 +900,18 @@ describe('CNAME following', function () {
 
         expect($cnameRecords)->toHaveCount(1);
         expect($aRecords)->toHaveCount(1);
-        expect($aRecords[0]->data)->toBe('93.184.216.34');
+        expect($aRecords[0]->data)->toBe('192.0.2.80');
     });
 
     it('returns CNAME records as-is when querying for CNAME type', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('www.example.com', 'CNAME', '1.2.3.4', new QueryResult(
+        $executor->addFixture('www.example.com', 'CNAME', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'example.com.')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('www.example.com', ['CNAME'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('www.example.com', ['CNAME'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(1);
@@ -921,7 +921,7 @@ describe('CNAME following', function () {
 
     it('stops following when a response contains a cyclic CNAME chain', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('www.example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('www.example.com', 'A', '192.0.2.1', new QueryResult(
             answer: [
                 new RawRecord('www.example.com.', 'IN', 'CNAME', 300, 'alias.example.com.'),
                 new RawRecord('alias.example.com.', 'IN', 'CNAME', 300, 'www.example.com.'),
@@ -930,7 +930,7 @@ describe('CNAME following', function () {
         ));
 
         $session = createSession($executor);
-        $result  = $session->resolve('www.example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $result  = $session->resolve('www.example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($result)->toBeArray();
         expect($result)->toHaveCount(2);
@@ -948,28 +948,28 @@ describe('ipv6 config', function () {
         $executor = new FixtureExecutor;
 
         // Delegation without glue
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
             queryTimeMs: 5,
         ));
 
         // NS resolution — A query for ns1.example.com (simplified: answer directly from root)
-        $executor->addFixture('ns1.example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '5.6.7.8')],
+        $executor->addFixture('ns1.example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('ns1.example.com.', 'IN', 'A', 300, '192.0.2.2')],
             queryTimeMs: 5,
         ));
 
         // Final answer
-        $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.2', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor, new ResolverConfig(ipv6: false));
-        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '192.0.2.1')]);
 
         expect($result)->toBeArray();
-        expect($result[0]->data)->toBe('93.184.216.34');
+        expect($result[0]->data)->toBe('192.0.2.80');
 
         // Verify no AAAA queries were made
         $queries     = $executor->getQueries();
@@ -981,8 +981,8 @@ describe('ipv6 config', function () {
 describe('events', function () {
     it('emits LOOKUP event with correct details', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 10,
         ));
 
@@ -991,21 +991,21 @@ describe('events', function () {
             $events[] = $event;
         });
 
-        $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $session->resolve('example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         $lookupEvents = array_values(array_filter($events, fn (ResolverEvent $e) => $e->type === EventType::LOOKUP));
 
         expect($lookupEvents)->not->toBeEmpty();
         expect($lookupEvents[0]->domain)->toBe('example.com');
         expect($lookupEvents[0]->nameserver)->toBe('ns1.example.com');
-        expect($lookupEvents[0]->address)->toBe('1.2.3.4');
+        expect($lookupEvents[0]->address)->toBe('192.0.2.1');
         expect($lookupEvents[0]->glue)->toBeFalse();
     });
 
     it('marks glue nameservers in LOOKUP events', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 10,
         ));
 
@@ -1014,7 +1014,7 @@ describe('events', function () {
             $events[] = $event;
         });
 
-        $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4', glue: true)]);
+        $session->resolve('example.com', ['A'], [ns('ns1.example.com', '192.0.2.1', glue: true)]);
 
         $lookupEvents = array_values(array_filter($events, fn (ResolverEvent $e) => $e->type === EventType::LOOKUP));
 
@@ -1024,13 +1024,13 @@ describe('events', function () {
 
     it('emits DELEGATION event during NS delegation', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.example.com.')],
-            additional: [new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '5.6.7.8')],
+            additional: [new RawRecord('ns1.example.com.', 'IN', 'A', 86400, '192.0.2.2')],
             queryTimeMs: 5,
         ));
-        $executor->addFixture('example.com', 'A', '5.6.7.8', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.2', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 10,
         ));
 
@@ -1039,7 +1039,7 @@ describe('events', function () {
             $events[] = $event;
         });
 
-        $session->resolve('example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+        $session->resolve('example.com', ['A'], [ns('root.server', '192.0.2.1')]);
 
         $delegationEvents = array_values(array_filter($events, fn (ResolverEvent $e) => $e->type === EventType::DELEGATION));
 
@@ -1049,8 +1049,8 @@ describe('events', function () {
 
     it('emits QUERY event with timing and type information', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 42,
         ));
 
@@ -1059,13 +1059,13 @@ describe('events', function () {
             $events[] = $event;
         });
 
-        $session->resolve('example.com', ['A'], [ns('ns1.example.com', '1.2.3.4')]);
+        $session->resolve('example.com', ['A'], [ns('ns1.example.com', '192.0.2.1')]);
 
         $queryEvents = array_values(array_filter($events, fn (ResolverEvent $e) => $e->type === EventType::QUERY));
 
         expect($queryEvents)->not->toBeEmpty();
         expect($queryEvents[0]->recordType)->toBe('A');
-        expect($queryEvents[0]->address)->toBe('1.2.3.4');
+        expect($queryEvents[0]->address)->toBe('192.0.2.1');
         expect($queryEvents[0]->timeMs)->toBe(42);
     });
 });
@@ -1075,7 +1075,7 @@ describe('nameserver resolution', function () {
         $executor = new FixtureExecutor;
 
         // Delegation without glue — NS needs address resolution
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.unresolvable.test.')],
             additional: [], // No glue records — address resolution will be attempted
             queryTimeMs: 5,
@@ -1084,7 +1084,7 @@ describe('nameserver resolution', function () {
         // No fixtures for ns1.unresolvable.test — resolution fails
 
         $session = createSession($executor);
-        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '192.0.2.1')]);
 
         expect($result)->toBeNull();
     });
@@ -1093,7 +1093,7 @@ describe('nameserver resolution', function () {
         $executor = new FixtureExecutor;
 
         // Delegation without glue to two nameservers
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [
                 new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.unresolvable.test.'),
                 new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns2.example.com.'),
@@ -1103,27 +1103,27 @@ describe('nameserver resolution', function () {
         ));
 
         // ns2.example.com can be resolved (fixture matched by prefix)
-        $executor->addFixture('ns2.example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('ns2.example.com.', 'IN', 'A', 300, '9.10.11.12')],
+        $executor->addFixture('ns2.example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('ns2.example.com.', 'IN', 'A', 300, '192.0.2.3')],
             queryTimeMs: 5,
         ));
 
         // Answer from the resolved nameserver
-        $executor->addFixture('example.com', 'A', '9.10.11.12', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.3', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 5,
         ));
 
         $session = createSession($executor, new ResolverConfig(ipv6: false));
-        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+        $result  = $session->resolve('example.com', ['A'], [ns('root.server', '192.0.2.1')]);
 
         expect($result)->toBeArray();
-        expect($result[0]->data)->toBe('93.184.216.34');
+        expect($result[0]->data)->toBe('192.0.2.80');
     });
 
     it('emits RESOLVE_FAILURE event when NS resolution fails', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
             authority: [new RawRecord('example.com.', 'IN', 'NS', 86400, 'ns1.unresolvable.test.')],
             queryTimeMs: 5,
         ));
@@ -1133,7 +1133,7 @@ describe('nameserver resolution', function () {
             $events[] = $event;
         });
 
-        $session->resolve('example.com', ['A'], [ns('root.server', '1.2.3.4')]);
+        $session->resolve('example.com', ['A'], [ns('root.server', '192.0.2.1')]);
 
         $resolveFailureEvents = array_values(array_filter($events, fn (ResolverEvent $e) => $e->type === EventType::RESOLVE_FAILURE));
         expect($resolveFailureEvents)->not->toBeEmpty();
@@ -1153,17 +1153,17 @@ describe('accessor methods', function () {
 describe('total time tracking', function () {
     it('accumulates query time across multiple queries', function () {
         $executor = new FixtureExecutor;
-        $executor->addFixture('example.com', 'A', '1.2.3.4', new QueryResult(
-            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '93.184.216.34')],
+        $executor->addFixture('example.com', 'A', '192.0.2.1', new QueryResult(
+            answer: [new RawRecord('example.com.', 'IN', 'A', 300, '192.0.2.80')],
             queryTimeMs: 15,
         ));
-        $executor->addFixture('example.com', 'AAAA', '1.2.3.4', new QueryResult(
+        $executor->addFixture('example.com', 'AAAA', '192.0.2.1', new QueryResult(
             answer: [new RawRecord('example.com.', 'IN', 'AAAA', 300, '2001:db8::1')],
             queryTimeMs: 20,
         ));
 
         $session = createSession($executor);
-        $session->resolve('example.com', ['A', 'AAAA'], [ns('ns1.example.com', '1.2.3.4')]);
+        $session->resolve('example.com', ['A', 'AAAA'], [ns('ns1.example.com', '192.0.2.1')]);
 
         expect($session->getTotalTimeMs())->toBe(35);
     });

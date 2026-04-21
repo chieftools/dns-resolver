@@ -47,11 +47,11 @@ describe('DNSSEC resilience', function () use ($failingExecutorClass) {
     it('does not mark zone invalid when DNSKEY fetch times out and fallback succeeds', function () use ($failingExecutorClass) {
         $executor = clone $failingExecutorClass;
 
-        // ns1 (10.0.0.1): ALL queries timeout
-        $executor->failAddress('10.0.0.1');
+        // ns1 (198.51.100.1): ALL queries timeout
+        $executor->failAddress('198.51.100.1');
 
-        // ns2 (10.0.0.2): DNSKEY returns a valid-looking response
-        $executor->addFixture('example.com', 'DNSKEY', '10.0.0.2', new QueryResult(
+        // ns2 (198.51.100.2): DNSKEY returns a valid-looking response
+        $executor->addFixture('example.com', 'DNSKEY', '198.51.100.2', new QueryResult(
             answer: [
                 new RawRecord('example.com.', 'IN', 'DNSKEY', 7200, '257 3 13 dummykey'),
             ],
@@ -59,9 +59,9 @@ describe('DNSSEC resilience', function () use ($failingExecutorClass) {
         ));
 
         // ns2: main query returns an answer
-        $executor->addFixture('test.example.com', 'A', '10.0.0.2', new QueryResult(
+        $executor->addFixture('test.example.com', 'A', '198.51.100.2', new QueryResult(
             answer: [
-                new RawRecord('test.example.com.', 'IN', 'A', 300, '93.184.216.34'),
+                new RawRecord('test.example.com.', 'IN', 'A', 300, '192.0.2.80'),
             ],
             queryTimeMs: 1,
         ));
@@ -77,8 +77,8 @@ describe('DNSSEC resilience', function () use ($failingExecutorClass) {
             'test.example.com',
             ['A'],
             [
-                ['host' => 'ns1.example.com', 'addr' => '10.0.0.1', 'glue' => true],
-                ['host' => 'ns2.example.com', 'addr' => '10.0.0.2', 'glue' => true],
+                ['host' => 'ns1.example.com', 'addr' => '198.51.100.1', 'glue' => true],
+                ['host' => 'ns2.example.com', 'addr' => '198.51.100.2', 'glue' => true],
             ],
             parentDs: [['keytag' => 12345, 'algorithm' => 13, 'digest_type' => 2, 'digest' => 'ABCD']],
             currentZone: 'example.com',
@@ -86,7 +86,7 @@ describe('DNSSEC resilience', function () use ($failingExecutorClass) {
 
         expect($result)->toBeArray();
         expect($result)->not->toBeEmpty();
-        expect($result[0]->data)->toBe('93.184.216.34');
+        expect($result[0]->data)->toBe('192.0.2.80');
 
         // The critical assertion: no "failed to fetch DNSKEY" errors from the timeout.
         // The zone may be invalid for other reasons (DS mismatch), but NOT because

@@ -1,6 +1,6 @@
 [
     {
-        "key": ".|DNSKEY|2001:500:9f::42",
+        "key": ".|DNSKEY|2001:db8::18",
         "query_time_ms": 48,
         "answer": [
             {
@@ -43,7 +43,7 @@
         "additional": []
     },
     {
-        "key": "cloudflare.com|A|2001:500:9f::42",
+        "key": "cloudflare.com|A|2001:db8::18",
         "query_time_ms": 107,
         "answer": [],
         "authority": [
@@ -159,187 +159,187 @@
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.5.6.30"
+                "data": "192.0.2.2"
             },
             {
                 "name": "a.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:503:a83e:0:0:0:2:30"
+                "data": "2001:db8::1"
             },
             {
                 "name": "b.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.33.14.30"
+                "data": "192.0.2.3"
             },
             {
                 "name": "b.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:503:231d:0:0:0:2:30"
+                "data": "2001:db8::2"
             },
             {
                 "name": "c.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.26.92.30"
+                "data": "192.0.2.4"
             },
             {
                 "name": "c.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:503:83eb:0:0:0:0:30"
+                "data": "2001:db8::3"
             },
             {
                 "name": "d.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.31.80.30"
+                "data": "192.0.2.5"
             },
             {
                 "name": "d.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:500:856e:0:0:0:0:30"
+                "data": "2001:db8::4"
             },
             {
                 "name": "e.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.12.94.30"
+                "data": "192.0.2.6"
             },
             {
                 "name": "e.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:502:1ca1:0:0:0:0:30"
+                "data": "2001:db8::5"
             },
             {
                 "name": "f.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.35.51.30"
+                "data": "192.0.2.7"
             },
             {
                 "name": "f.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:503:d414:0:0:0:0:30"
+                "data": "2001:db8::6"
             },
             {
                 "name": "g.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.42.93.30"
+                "data": "192.0.2.8"
             },
             {
                 "name": "g.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:503:eea3:0:0:0:0:30"
+                "data": "2001:db8::7"
             },
             {
                 "name": "h.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.54.112.30"
+                "data": "192.0.2.9"
             },
             {
                 "name": "h.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:502:8cc:0:0:0:0:30"
+                "data": "2001:db8::8"
             },
             {
                 "name": "i.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.43.172.30"
+                "data": "192.0.2.10"
             },
             {
                 "name": "i.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:503:39c1:0:0:0:0:30"
+                "data": "2001:db8::9"
             },
             {
                 "name": "j.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.48.79.30"
+                "data": "192.0.2.11"
             },
             {
                 "name": "j.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:502:7094:0:0:0:0:30"
+                "data": "2001:db8::a"
             },
             {
                 "name": "k.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.52.178.30"
+                "data": "192.0.2.12"
             },
             {
                 "name": "k.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:503:d2d:0:0:0:0:30"
+                "data": "2001:db8::b"
             },
             {
                 "name": "l.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.41.162.30"
+                "data": "192.0.2.13"
             },
             {
                 "name": "l.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:500:d937:0:0:0:0:30"
+                "data": "2001:db8::c"
             },
             {
                 "name": "m.gtld-servers.net.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "192.55.83.30"
+                "data": "192.0.2.14"
             },
             {
                 "name": "m.gtld-servers.net.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2001:501:b1f9:0:0:0:0:30"
+                "data": "2001:db8::d"
             }
         ]
     },
     {
-        "key": "com|DNSKEY|192.26.92.30",
+        "key": "com|DNSKEY|192.0.2.4",
         "query_time_ms": 20,
         "answer": [
             {
@@ -368,7 +368,7 @@
         "additional": []
     },
     {
-        "key": "cloudflare.com|A|192.26.92.30",
+        "key": "cloudflare.com|A|192.0.2.4",
         "query_time_ms": 21,
         "answer": [],
         "authority": [
@@ -428,145 +428,145 @@
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.0.33"
+                "data": "192.0.2.28"
             },
             {
                 "name": "ns3.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.7.226"
+                "data": "192.0.2.29"
             },
             {
                 "name": "ns3.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:21"
+                "data": "2001:db8::19"
             },
             {
                 "name": "ns3.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:7e2"
+                "data": "2001:db8::1a"
             },
             {
                 "name": "ns5.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.2.9"
+                "data": "192.0.2.30"
             },
             {
                 "name": "ns5.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.9.55"
+                "data": "192.0.2.31"
             },
             {
                 "name": "ns5.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:209"
+                "data": "2001:db8::1b"
             },
             {
                 "name": "ns5.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:937"
+                "data": "2001:db8::1c"
             },
             {
                 "name": "ns4.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.1.33"
+                "data": "192.0.2.32"
             },
             {
                 "name": "ns4.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.8.55"
+                "data": "192.0.2.33"
             },
             {
                 "name": "ns4.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:121"
+                "data": "2001:db8::1d"
             },
             {
                 "name": "ns4.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:837"
+                "data": "2001:db8::1e"
             },
             {
                 "name": "ns6.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.3.11"
+                "data": "192.0.2.34"
             },
             {
                 "name": "ns6.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.5.6"
+                "data": "192.0.2.35"
             },
             {
                 "name": "ns6.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:30b"
+                "data": "2001:db8::1f"
             },
             {
                 "name": "ns6.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:506"
+                "data": "2001:db8::20"
             },
             {
                 "name": "ns7.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.4.8"
+                "data": "192.0.2.36"
             },
             {
                 "name": "ns7.cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 172800,
-                "data": "162.159.6.6"
+                "data": "192.0.2.37"
             },
             {
                 "name": "ns7.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:408"
+                "data": "2001:db8::21"
             },
             {
                 "name": "ns7.cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 172800,
-                "data": "2400:cb00:2049:1:0:0:a29f:606"
+                "data": "2001:db8::22"
             }
         ]
     },
     {
-        "key": "cloudflare.com|DNSKEY|162.159.6.6",
+        "key": "cloudflare.com|DNSKEY|192.0.2.37",
         "query_time_ms": 17,
         "answer": [
             {
@@ -595,7 +595,7 @@
         "additional": []
     },
     {
-        "key": "cloudflare.com|A|162.159.6.6",
+        "key": "cloudflare.com|A|192.0.2.37",
         "query_time_ms": 15,
         "answer": [
             {
@@ -603,14 +603,14 @@
                 "class": "IN",
                 "type": "A",
                 "ttl": 300,
-                "data": "104.16.132.229"
+                "data": "192.0.2.38"
             },
             {
                 "name": "cloudflare.com.",
                 "class": "IN",
                 "type": "A",
                 "ttl": 300,
-                "data": "104.16.133.229"
+                "data": "192.0.2.39"
             },
             {
                 "name": "cloudflare.com.",
@@ -624,7 +624,7 @@
         "additional": []
     },
     {
-        "key": "cloudflare.com|AAAA|162.159.6.6",
+        "key": "cloudflare.com|AAAA|192.0.2.37",
         "query_time_ms": 12,
         "answer": [
             {
@@ -632,14 +632,14 @@
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 300,
-                "data": "2606:4700:0:0:0:0:6810:85e5"
+                "data": "2001:db8::23"
             },
             {
                 "name": "cloudflare.com.",
                 "class": "IN",
                 "type": "AAAA",
                 "ttl": 300,
-                "data": "2606:4700:0:0:0:0:6810:84e5"
+                "data": "2001:db8::24"
             },
             {
                 "name": "cloudflare.com.",
