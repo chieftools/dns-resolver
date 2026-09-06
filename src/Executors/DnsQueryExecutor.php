@@ -4,8 +4,6 @@ declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Executors;
 
-use ChiefTools\DNS\Resolver\Exceptions\QueryException;
-
 interface DnsQueryExecutor
 {
     /**

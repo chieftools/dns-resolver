@@ -14,7 +14,7 @@ use ChiefTools\DNS\Resolver\Exceptions\QueryException;
 use ChiefTools\DNS\Resolver\Exceptions\ResolutionTimeoutException;
 
 /**
- * @internal NetDNS2 packet handling with bounded, nonblocking network IO.
+ * @internal transport for NetDNS2 packet handling with bounded, nonblocking network IO
  */
 final class DeadlineAwareNetDns2Transport
 {

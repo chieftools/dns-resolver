@@ -11,7 +11,6 @@ use ChiefTools\DNS\Resolver\Data\RootServers;
 use ChiefTools\DNS\Resolver\Enums\DnssecMode;
 use ChiefTools\DNS\Resolver\Enums\RecordType;
 use ChiefTools\DNS\Resolver\Enums\LookupStatus;
-use ChiefTools\DNS\Resolver\Events\ResolverEvent;
 use ChiefTools\DNS\Resolver\Results\DnssecResult;
 use ChiefTools\DNS\Resolver\Results\LookupResult;
 use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
