@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ChiefTools\DNS\Resolver;
 
 use Closure;
+use InvalidArgumentException;
 use ChiefTools\DNS\Resolver\Results\Record;
 use ChiefTools\DNS\Resolver\Data\RootServers;
 use ChiefTools\DNS\Resolver\Enums\DnssecMode;
@@ -17,20 +18,27 @@ use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Enums\RecordValidation;
 use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 use ChiefTools\DNS\Resolver\Executors\NetDns2QueryExecutor;
+use ChiefTools\DNS\Resolver\Executors\DeadlineAwareDnsQueryExecutor;
 
 readonly class Resolver
 {
     private DnsQueryExecutor $executor;
     private ResolverConfig   $config;
 
+    /** @param (Closure(): int)|null $clock Monotonic time in nanoseconds. */
     public function __construct(
         ?DnsQueryExecutor $executor = null,
         ?ResolverConfig $config = null,
+        private ?Closure $clock = null,
     ) {
         $this->config   = $config ?? new ResolverConfig;
         $this->executor = $executor ?? new NetDns2QueryExecutor(
             timeout: $this->config->timeout,
         );
+
+        if ($this->config->totalTimeout !== null && !$this->executor instanceof DeadlineAwareDnsQueryExecutor) {
+            throw new InvalidArgumentException('A total timeout requires a deadline-aware DNS query executor.');
+        }
     }
 
     /**
@@ -45,6 +53,10 @@ readonly class Resolver
         DnssecMode $dnssec = DnssecMode::ON,
         ?Closure $onEvent = null,
     ): LookupResult {
+        $deadline = $this->config->totalTimeout !== null
+            ? new ResolutionDeadline($this->config->totalTimeout, $this->clock)
+            : null;
+
         $types = is_array($types) ? $types : [$types];
 
         // Normalize types to uppercase strings
@@ -52,6 +64,10 @@ readonly class Resolver
             static fn (RecordType|string $type) => $type instanceof RecordType ? $type->value : strtoupper($type),
             $types,
         );
+
+        if ($deadline !== null && array_intersect($types, ['AXFR', 'IXFR']) !== []) {
+            throw new InvalidArgumentException('Zone transfers do not support a total timeout.');
+        }
 
         // Initialize DNSSEC validator if enabled
         $dnssecValidator = $dnssec !== DnssecMode::OFF ? new DnssecValidator : null;
@@ -61,6 +77,7 @@ readonly class Resolver
             config: $this->config,
             dnssecValidator: $dnssecValidator,
             onEvent: $onEvent,
+            deadline: $deadline,
         );
 
         $results = $engine->resolve(
@@ -133,6 +150,8 @@ readonly class Resolver
                 $info    = 'DNSSEC validation failed: ' . implode('; ', $dnssecResult->errors);
             }
         }
+
+        $deadline?->throwIfExpired();
 
         return new LookupResult(
             records: $records,

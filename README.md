@@ -115,11 +115,37 @@ $resolver = new Resolver(
 );
 ```
 
+### Total timeout
+
+Set `totalTimeout` to bound the complete DNS lookup, including delegation, nameserver fallback, CNAMEs, all requested record types, and DNSSEC queries. It accepts positive, finite seconds, including fractions. Its default is `null`, which preserves the existing per-query timeout behavior.
+
+```php
+use ChiefTools\DNS\Resolver\Resolver;
+use ChiefTools\DNS\Resolver\ResolverConfig;
+use ChiefTools\DNS\Resolver\Exceptions\ResolutionTimeoutException;
+
+$resolver = new Resolver(config: new ResolverConfig(totalTimeout: 5));
+
+try {
+    $result = $resolver->resolve('client.example.test', ['A', 'AAAA']);
+} catch (ResolutionTimeoutException $exception) {
+    // The complete lookup exhausted its budget; no partial result is returned.
+}
+```
+
+Each `resolve()` call starts a fresh monotonic deadline. The default executor bounds UDP and TCP connection, write, and read waits by the remaining time. TCP fallback and incremental responses share that budget. The existing per-query timeout still permits nameserver fallback while total time remains. DNS answers are not cached.
+
+Event callbacks run synchronously and must remain nonblocking. The resolver checks its deadline before and after callbacks but cannot interrupt code inside them. Custom executors must also enforce the deadline during blocking operations.
+
+Zone transfers (`AXFR` and `IXFR`) are not supported with `totalTimeout`; requesting them throws `InvalidArgumentException` before network activity.
+
 ## Custom executor
 
 The resolver ships with `NetDns2QueryExecutor` (default) and `DigQueryExecutor`. You can provide your own by implementing the `DnsQueryExecutor` interface.
 
 `DigQueryExecutor` requires external `dig` and `jc` binaries. If you do not need that integration, the default `NetDns2QueryExecutor` is the simpler and faster choice.
+
+When `totalTimeout` is configured, the executor must implement `DeadlineAwareDnsQueryExecutor`. Its `queryWithDeadline()` method receives the same `ResolutionDeadline` throughout the lookup. Use `remaining()` to bound network waits and propagate `ResolutionTimeoutException` immediately. `DigQueryExecutor` and existing custom executors remain usable without a total timeout; configuring one with an executor that lacks deadline support throws `InvalidArgumentException` when constructing `Resolver`.
 
 ```php
 use ChiefTools\DNS\Resolver\Executors\DigQueryExecutor;

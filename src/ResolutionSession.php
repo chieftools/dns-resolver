@@ -6,6 +6,7 @@ namespace ChiefTools\DNS\Resolver;
 
 use Closure;
 use RuntimeException;
+use InvalidArgumentException;
 use ChiefTools\DNS\Resolver\Data\RootServers;
 use ChiefTools\DNS\Resolver\Events\EventType;
 use ChiefTools\DNS\Resolver\Executors\RawRecord;
@@ -15,6 +16,7 @@ use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;
 use ChiefTools\DNS\Resolver\Dnssec\WireFormatConverter;
 use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
+use ChiefTools\DNS\Resolver\Executors\DeadlineAwareDnsQueryExecutor;
 
 /**
  * @internal Single-use resolution session. Use Resolver as the public API.
@@ -33,7 +35,11 @@ class ResolutionSession
         private readonly ResolverConfig $config,
         ?DnssecValidator $dnssecValidator = null,
         ?Closure $onEvent = null,
+        private readonly ?ResolutionDeadline $deadline = null,
     ) {
+        if ($deadline !== null && !$executor instanceof DeadlineAwareDnsQueryExecutor) {
+            throw new InvalidArgumentException('A total timeout requires a deadline-aware DNS query executor.');
+        }
         $this->dnssecValidator = $dnssecValidator;
         $this->onEvent         = $onEvent;
     }
@@ -66,6 +72,8 @@ class ResolutionSession
         ?array $parentDs = null,
         ?string $currentZone = null,
     ): array|string|null {
+        $this->deadline?->throwIfExpired();
+
         if ($lookups > $this->config->maxDepth) {
             throw new RuntimeException('Too many recursive lookups!');
         }
@@ -610,14 +618,24 @@ class ResolutionSession
 
     private function query(string $domain, string $type, string $nameserverAddr, bool $dnssec = false): QueryResult
     {
-        return $this->executor->query($domain, $type, $nameserverAddr, $dnssec);
+        $this->deadline?->throwIfExpired();
+
+        $result = $this->deadline !== null && $this->executor instanceof DeadlineAwareDnsQueryExecutor
+            ? $this->executor->queryWithDeadline($domain, $type, $nameserverAddr, $dnssec, $this->deadline)
+            : $this->executor->query($domain, $type, $nameserverAddr, $dnssec);
+
+        $this->deadline?->throwIfExpired();
+
+        return $result;
     }
 
     private function emit(ResolverEvent $event): void
     {
+        $this->deadline?->throwIfExpired();
         if ($this->onEvent !== null) {
             ($this->onEvent)($event);
         }
+        $this->deadline?->throwIfExpired();
     }
 
     private static function shortenIPv6(string $ip): string

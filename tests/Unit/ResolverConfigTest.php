@@ -5,6 +5,10 @@ declare(strict_types=1);
 use ChiefTools\DNS\Resolver\ResolverConfig;
 
 describe('ResolverConfig', function () {
+    it('rejects invalid total timeouts', function (float $timeout) {
+        expect(fn () => new ResolverConfig(totalTimeout: $timeout))->toThrow(InvalidArgumentException::class);
+    })->with(['zero' => 0.0, 'negative' => -1.0, 'infinite' => INF, 'not a number' => NAN]);
+
     it('has sensible defaults', function () {
         $config = new ResolverConfig;
 

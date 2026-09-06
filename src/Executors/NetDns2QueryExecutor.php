@@ -7,9 +7,10 @@ namespace ChiefTools\DNS\Resolver\Executors;
 use NetDNS2\RR;
 use NetDNS2\Resolver;
 use NetDNS2\Exception;
+use ChiefTools\DNS\Resolver\ResolutionDeadline;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;
 
-class NetDns2QueryExecutor implements DnsQueryExecutor
+class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
 {
     public function __construct(
         private readonly int $timeout = 2,
@@ -29,6 +30,27 @@ class NetDns2QueryExecutor implements DnsQueryExecutor
             throw new QueryException(self::mapErrorMessage($e->getMessage()), previous: $e);
         }
 
+        return $this->execute($resolver, $domain, $type);
+    }
+
+    public function queryWithDeadline(
+        string $domain,
+        string $type,
+        string $nameserverAddr,
+        bool $dnssec,
+        ResolutionDeadline $deadline,
+    ): QueryResult {
+        $deadline->throwIfExpired();
+
+        $resolver = new DeadlineAwareNetDns2Transport($deadline, $nameserverAddr, $this->timeout, $dnssec);
+        $result   = $this->execute($resolver, $domain, $type);
+        $deadline->throwIfExpired();
+
+        return $result;
+    }
+
+    private function execute(Resolver|DeadlineAwareNetDns2Transport $resolver, string $domain, string $type): QueryResult
+    {
         $startTime = hrtime(true);
 
         try {
