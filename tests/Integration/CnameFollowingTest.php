@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 use ChiefTools\DNS\Resolver\Resolver;
 use ChiefTools\DNS\Resolver\Enums\DnssecMode;

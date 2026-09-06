@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 use ChiefTools\DNS\Resolver\ResolverConfig;
 use ChiefTools\DNS\Resolver\Events\EventType;
@@ -54,11 +54,11 @@ function nsec3Base32HexEncode(string $data): string
     $bits     = 0;
 
     for ($i = 0, $len = strlen($data); $i < $len; $i++) {
-        $buffer = ($buffer << 8) | ord($data[$i]);
-        $bits += 8;
+        $buffer  = ($buffer << 8) | ord($data[$i]);
+        $bits   += 8;
 
         while ($bits >= 5) {
-            $bits -= 5;
+            $bits   -= 5;
             $result .= $alphabet[($buffer >> $bits) & 0x1F];
         }
     }
@@ -70,9 +70,7 @@ function nsec3Base32HexEncode(string $data): string
     return $result;
 }
 
-/**
- * Create an executor that throws QueryException for specific nameserver addresses.
- */
+/** Create an executor that throws QueryException for specific nameserver addresses. */
 function failingExecutor(FixtureExecutor $inner, string ...$failAddrs): DnsQueryExecutor
 {
     return new class($inner, $failAddrs) implements DnsQueryExecutor

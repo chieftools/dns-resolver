@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 use NetDNS2\RR;
 use NetDNS2\Data;
@@ -22,7 +22,7 @@ $nextByte    = 0;
 $end         = hrtime(true) + 2_000_000_000;
 
 while (hrtime(true) < $end) {
-    $read = [$udp, $tcp];
+    $read   = [$udp, $tcp];
     if (is_resource($client)) {
         $read[] = $client;
     }
@@ -51,12 +51,12 @@ while (hrtime(true) < $end) {
             if (strlen($queryBuffer) < 2) {
                 continue;
             }
-            $length = ord($queryBuffer[0]) * 256 + ord($queryBuffer[1]);
+            $length       = ord($queryBuffer[0]) * 256 + ord($queryBuffer[1]);
             if (strlen($queryBuffer) < $length + 2) {
                 continue;
             }
-            $query       = substr($queryBuffer, 2, $length);
-            $queryBuffer = '';
+            $query        = substr($queryBuffer, 2, $length);
+            $queryBuffer  = '';
         } else {
             $query = stream_socket_recvfrom($udp, 65535, 0, $peer);
         }

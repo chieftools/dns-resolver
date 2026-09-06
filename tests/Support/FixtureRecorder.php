@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Tests\Support;
 
@@ -67,17 +67,13 @@ class FixtureRecorder implements DnsQueryExecutor
         );
     }
 
-    /**
-     * @return list<array{key: string, query_time_ms: int, response_code: string, answer: list<array<string, mixed>>, authority: list<array<string, mixed>>, additional: list<array<string, mixed>>}>
-     */
+    /** @return list<array{key: string, query_time_ms: int, response_code: string, answer: list<array<string, mixed>>, authority: list<array<string, mixed>>, additional: list<array<string, mixed>>}> */
     public function getRecordings(): array
     {
         return $this->recordings;
     }
 
-    /**
-     * @return array{name: string, class: string, type: string, ttl: int, data: string}
-     */
+    /** @return array{name: string, class: string, type: string, ttl: int, data: string} */
     private static function serializeRecord(RawRecord $record): array
     {
         return [

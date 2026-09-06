@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver;
 
@@ -25,7 +25,7 @@ readonly class Resolver
     private DnsQueryExecutor $executor;
     private ResolverConfig   $config;
 
-    /** @param (Closure(): int)|null $clock Monotonic time in nanoseconds. */
+    /** @param (\Closure(): int)|null $clock Monotonic time in nanoseconds. */
     public function __construct(
         ?DnsQueryExecutor $executor = null,
         ?ResolverConfig $config = null,
@@ -44,8 +44,8 @@ readonly class Resolver
     /**
      * Resolve DNS records for a domain.
      *
-     * @param RecordType|string|list<RecordType|string> $types   Record type(s) to query
-     * @param (Closure(ResolverEvent): void)|null       $onEvent Optional callback for real-time resolution events
+     * @param \ChiefTools\DNS\Resolver\Enums\RecordType|string|list<\ChiefTools\DNS\Resolver\Enums\RecordType|string> $types   \ChiefTools\DNS\Resolver\Results\Record type(s) to query
+     * @param (\Closure(\ChiefTools\DNS\Resolver\Events\ResolverEvent): void)|null                                    $onEvent Optional callback for real-time resolution events
      */
     public function resolve(
         string $domain,
@@ -162,9 +162,7 @@ readonly class Resolver
         );
     }
 
-    /**
-     * Format record data for human readability.
-     */
+    /** Format record data for human readability. */
     private static function formatRecordData(string $type, string $data): string
     {
         return match ($type) {
@@ -188,9 +186,7 @@ readonly class Resolver
         return inet_ntop($packed) ?: $ip;
     }
 
-    /**
-     * Normalize a record with hex data by removing spaces from the hex portion.
-     */
+    /** Normalize a record with hex data by removing spaces from the hex portion. */
     private static function normalizeHexRecord(string $data, int $prefixParts): string
     {
         $parts = preg_split('/\s+/', $data, $prefixParts + 1);

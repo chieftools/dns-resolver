@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Events;
 
@@ -10,7 +10,6 @@ readonly class ResolverEvent
         public EventType $type,
         public string $message,
         public int $depth,
-
         // Structured data — available depending on event type
         public ?string $domain = null,
         public ?string $recordType = null,

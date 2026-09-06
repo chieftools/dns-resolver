@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Tests\Support;
 
@@ -11,7 +11,7 @@ use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 
 class FixtureExecutor implements DnsQueryExecutor
 {
-    /** @var array<string, QueryResult> */
+    /** @var array<string, \ChiefTools\DNS\Resolver\Executors\QueryResult> */
     private array $fixtures = [];
 
     /** @var list<array{domain: string, type: string, nameserver: string, dnssec: bool}> */
@@ -72,9 +72,7 @@ class FixtureExecutor implements DnsQueryExecutor
         throw new QueryException('no fixture for: ' . $key);
     }
 
-    /**
-     * @return list<array{domain: string, type: string, nameserver: string, dnssec: bool}>
-     */
+    /** @return list<array{domain: string, type: string, nameserver: string, dnssec: bool}> */
     public function getQueries(): array
     {
         return $this->queries;
@@ -88,7 +86,7 @@ class FixtureExecutor implements DnsQueryExecutor
     /**
      * @param list<array{name: string, class: string, type: string, ttl: int, data: string}> $section
      *
-     * @return list<RawRecord>
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>
      */
     private static function convertSection(array $section): array
     {

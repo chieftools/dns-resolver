@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 use ChiefTools\DNS\Resolver\ResolutionDeadline;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;

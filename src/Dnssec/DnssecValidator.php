@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Dnssec;
 
@@ -28,7 +28,7 @@ class DnssecValidator
     /** @var list<string> Validation errors encountered */
     private array $errors = [];
 
-    /** @var DnssecStatus Current validation status */
+    /** @var \ChiefTools\DNS\Resolver\Enums\DnssecStatus Current validation status */
     private DnssecStatus $status = DnssecStatus::INDETERMINATE;
 
     /** @var array<string, list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}>> Cached DNSKEY records by zone */
@@ -64,9 +64,7 @@ class DnssecValidator
         ];
     }
 
-    /**
-     * Reset validation state for a new lookup.
-     */
+    /** Reset validation state for a new lookup. */
     public function reset(): void
     {
         $this->errors           = [];
@@ -82,9 +80,7 @@ class DnssecValidator
         return $this->status;
     }
 
-    /**
-     * @return list<string>
-     */
+    /** @return list<string> */
     public function getErrors(): array
     {
         return $this->errors;
@@ -100,9 +96,7 @@ class DnssecValidator
         $this->recordValidation[$this->recordKey($name, $type, $data)] = $validated;
     }
 
-    /**
-     * @return bool|null true = validated, false = failed, null = not validated
-     */
+    /** @return bool|null true = validated, false = failed, null = not validated */
     public function getRecordValidation(string $name, string $type, string $data): ?bool
     {
         return $this->recordValidation[$this->recordKey($name, $type, $data)] ?? null;
@@ -278,9 +272,7 @@ class DnssecValidator
         return $dt ? $dt->getTimestamp() : null;
     }
 
-    /**
-     * Calculate the key tag for a DNSKEY record (RFC 4034 Appendix B).
-     */
+    /** Calculate the key tag for a DNSKEY record (RFC 4034 Appendix B). */
     public function calculateKeyTag(int $flags, int $protocol, int $algorithm, string $publicKey): int
     {
         $rdata = pack('nCC', $flags, $protocol, $algorithm) . $publicKey;
@@ -363,9 +355,7 @@ class DnssecValidator
         return $this->verifySignature($signedData, $rrsig['signature'], $dnskey);
     }
 
-    /**
-     * @param list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}> $dnskeys
-     */
+    /** @param list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}> $dnskeys */
     public function validateRootDnskeys(array $dnskeys): bool
     {
         $anchors = $this->rootTrustAnchors['.'] ?? [];
@@ -419,18 +409,14 @@ class DnssecValidator
         return null;
     }
 
-    /**
-     * @param list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}> $dnskeys
-     */
+    /** @param list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}> $dnskeys */
     public function cacheDnskeys(string $zone, array $dnskeys): void
     {
         $zone                     = strtolower(rtrim($zone, '.'));
         $this->dnskeyCache[$zone] = $dnskeys;
     }
 
-    /**
-     * @return list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}>|null
-     */
+    /** @return list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}>|null */
     public function getCachedDnskeys(string $zone): ?array
     {
         $zone = strtolower(rtrim($zone, '.'));
@@ -527,9 +513,7 @@ class DnssecValidator
         return implode('', array_column($rrData, 'wire'));
     }
 
-    /**
-     * @param array{algorithm: int, public_key: string} $dnskey
-     */
+    /** @param array{algorithm: int, public_key: string} $dnskey */
     private function verifySignature(string $data, string $signature, array $dnskey): bool
     {
         return match ($dnskey['algorithm']) {
@@ -544,9 +528,7 @@ class DnssecValidator
         };
     }
 
-    /**
-     * @param array{public_key: string} $dnskey
-     */
+    /** @param array{public_key: string} $dnskey */
     private function verifyRsaSignature(string $data, string $signature, array $dnskey, string $hashAlgo): bool
     {
         $publicKeyPem = $this->asn1->rsaDnskeyToPem($dnskey['public_key']);
@@ -571,9 +553,7 @@ class DnssecValidator
         return openssl_verify($data, $signature, $pubKey, $algo) === 1;
     }
 
-    /**
-     * @param array{public_key: string} $dnskey
-     */
+    /** @param array{public_key: string} $dnskey */
     private function verifyEcdsaSignature(string $data, string $signature, array $dnskey, string $hashAlgo, string $curve): bool
     {
         $derSignature = $this->asn1->ecdsaRawToDer($signature, $curve);
@@ -603,9 +583,7 @@ class DnssecValidator
         return openssl_verify($data, $derSignature, $pubKey, $algo) === 1;
     }
 
-    /**
-     * @param array{public_key: string} $dnskey
-     */
+    /** @param array{public_key: string} $dnskey */
     private function verifyEd25519Signature(string $data, string $signature, array $dnskey): bool
     {
         if (strlen($dnskey['public_key']) !== 32) {

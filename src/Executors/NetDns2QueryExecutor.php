@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Executors;
 
@@ -104,7 +104,7 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
     /**
      * Convert a section of NetDNS2 RR objects to RawRecord DTOs.
      *
-     * @param array<RR> $section
+     * @param array<\NetDNS2\RR> $section
      *
      * @return list<RawRecord>
      */
@@ -133,9 +133,7 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
         return $records;
     }
 
-    /**
-     * Extract the RDATA presentation string from an RR object.
-     */
+    /** Extract the RDATA presentation string from an RR object. */
     private function extractRdata(RR $rr, string $type): string
     {
         $fullString = (string)$rr;
@@ -155,9 +153,7 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
         return $data;
     }
 
-    /**
-     * Convert NSEC3 hashed owner name from base64 (NetDNS2) to base32hex (dig).
-     */
+    /** Convert NSEC3 hashed owner name from base64 (NetDNS2) to base32hex (dig). */
     private function convertNsec3HashEncoding(string $data): string
     {
         $parts = preg_split('/\s+/', $data, 6);
@@ -177,9 +173,7 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
         return implode(' ', $parts);
     }
 
-    /**
-     * Encode binary data as base32hex (RFC 4648 Section 7).
-     */
+    /** Encode binary data as base32hex (RFC 4648 Section 7). */
     private static function base32HexEncode(string $data): string
     {
         $alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
@@ -188,11 +182,11 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
         $bits     = 0;
 
         for ($i = 0, $len = strlen($data); $i < $len; $i++) {
-            $buffer = ($buffer << 8) | ord($data[$i]);
-            $bits += 8;
+            $buffer  = ($buffer << 8) | ord($data[$i]);
+            $bits   += 8;
 
             while ($bits >= 5) {
-                $bits -= 5;
+                $bits   -= 5;
                 $result .= $alphabet[($buffer >> $bits) & 0x1F];
             }
         }

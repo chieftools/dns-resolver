@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver;
 
@@ -13,7 +13,7 @@ final readonly class ResolutionDeadline
     private Closure $clock;
     private int $expiresAt;
 
-    /** @param (Closure(): int)|null $clock Monotonic time in nanoseconds. */
+    /** @param (\Closure(): int)|null $clock Monotonic time in nanoseconds. */
     public function __construct(float $timeout, ?Closure $clock = null)
     {
         if (!is_finite($timeout) || $timeout <= 0) {

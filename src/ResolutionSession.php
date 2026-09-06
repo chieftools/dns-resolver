@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver;
 
@@ -25,7 +25,7 @@ class ResolutionSession
 {
     private ?DnssecValidator $dnssecValidator;
 
-    /** @var (Closure(ResolverEvent): void)|null */
+    /** @var (\Closure(\ChiefTools\DNS\Resolver\Events\ResolverEvent): void)|null */
     private ?Closure $onEvent;
 
     private int $totalTimeMs = 0;
@@ -61,7 +61,7 @@ class ResolutionSession
      * @param list<array{host: string, addr: ?string, glue?: bool}>                           $nameservers
      * @param list<array{keytag: int, algorithm: int, digest_type: int, digest: string}>|null $parentDs
      *
-     * @return list<RawRecord>|string|null Returns records, 'NXDOMAIN', 'QUERY_FAILED', or null for empty
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>|string|null Returns records, 'NXDOMAIN', 'QUERY_FAILED', or null for empty
      */
     public function resolve(
         string $domain,
@@ -236,7 +236,7 @@ class ResolutionSession
      * @param list<string>                                   $types
      * @param array{host: string, addr: string, glue?: bool} $nameserver
      *
-     * @return list<RawRecord>
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>
      */
     private function handleAnswers(
         QueryResult $result,
@@ -288,11 +288,11 @@ class ResolutionSession
     }
 
     /**
-     * @param list<RawRecord> $cnameRecords
-     * @param list<RawRecord> $answers
-     * @param list<string>    $types
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $cnameRecords
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $answers
+     * @param list<string>                                       $types
      *
-     * @return list<RawRecord>
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>
      */
     private function followCname(array $cnameRecords, array $answers, array $types, int $lookups, int $depth): array
     {
@@ -356,11 +356,11 @@ class ResolutionSession
     }
 
     /**
-     * @param list<RawRecord>                                $answers
-     * @param list<string>                                   $types
-     * @param array{host: string, addr: string, glue?: bool} $nameserver
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $answers
+     * @param list<string>                                       $types
+     * @param array{host: string, addr: string, glue?: bool}     $nameserver
      *
-     * @return list<RawRecord>
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>
      */
     private function queryAdditionalTypes(
         array $answers,
@@ -419,11 +419,11 @@ class ResolutionSession
     }
 
     /**
-     * @param list<RawRecord>                                $authorityNs
-     * @param array{host: string, addr: string, glue?: bool} $nameserver
-     * @param list<string>                                   $types
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $authorityNs
+     * @param array{host: string, addr: string, glue?: bool}     $nameserver
+     * @param list<string>                                       $types
      *
-     * @return list<RawRecord>|string|null
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>|string|null
      */
     private function handleDelegation(
         QueryResult $result,
@@ -467,7 +467,7 @@ class ResolutionSession
     }
 
     /**
-     * @param list<RawRecord> $authorityNs
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $authorityNs
      *
      * @return list<array{host: string, addr: string|null, glue: bool}>
      */
@@ -508,7 +508,7 @@ class ResolutionSession
      * @param array{host: string, addr: string, glue?: bool} $nameserver
      * @param list<string>                                   $types
      *
-     * @return list<RawRecord>|null
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>|null
      */
     private function handleEmptyResponse(
         QueryResult $result,
@@ -550,7 +550,7 @@ class ResolutionSession
      * @param list<string>                                                                    $types
      * @param list<array{keytag: int, algorithm: int, digest_type: int, digest: string}>|null $parentDs
      *
-     * @return list<RawRecord>|string|null
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>|string|null
      */
     private function handleQueryFailure(
         string $domain,
@@ -587,9 +587,9 @@ class ResolutionSession
     }
 
     /**
-     * @param list<RawRecord> $records
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $records
      *
-     * @return list<RawRecord>
+     * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>
      */
     private function deduplicateRecords(array $records): array
     {
@@ -608,9 +608,7 @@ class ResolutionSession
         return $unique;
     }
 
-    /**
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function getAllowedRecursiveLookupTypes(): array
     {
         return $this->config->ipv6 ? ['A', 'AAAA'] : ['A'];
@@ -653,9 +651,7 @@ class ResolutionSession
     // DNSSEC validation methods
     // =========================================================================
 
-    /**
-     * @param list<array{keytag: int, algorithm: int, digest_type: int, digest: string}>|null $parentDs
-     */
+    /** @param list<array{keytag: int, algorithm: int, digest_type: int, digest: string}>|null $parentDs */
     private function validateZoneDnssec(string $zone, string $nameserverAddr, ?array $parentDs): void
     {
         if ($this->dnssecValidator === null) {
@@ -715,9 +711,7 @@ class ResolutionSession
         $this->dnssecValidator->markSigned();
     }
 
-    /**
-     * @param list<array{keytag: int, algorithm: int, digest_type: int, digest: string}> $parentDs
-     */
+    /** @param list<array{keytag: int, algorithm: int, digest_type: int, digest: string}> $parentDs */
     private function validateZoneDnskey(string $zone, string $nameserverAddr, array $parentDs): void
     {
         if ($this->dnssecValidator === null) {
@@ -805,9 +799,7 @@ class ResolutionSession
         $this->dnssecValidator->markSigned();
     }
 
-    /**
-     * @return array{0: list<array{keytag: int, algorithm: int, digest_type: int, digest: string}>|null, 1: string|null}
-     */
+    /** @return array{0: list<array{keytag: int, algorithm: int, digest_type: int, digest: string}>|null, 1: string|null} */
     private function validateDelegation(QueryResult $result, string $delegatedZone, string $currentZone, string $nameserverAddr): array
     {
         if ($this->dnssecValidator === null) {
@@ -867,9 +859,7 @@ class ResolutionSession
         return [null, $delegationStatus];
     }
 
-    /**
-     * @param list<RawRecord> $dsRrsigRecords
-     */
+    /** @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $dsRrsigRecords */
     private function validateDsRrsig(RawRecord $dsRrsigRecord, array $dsRrsigRecords, string $nameserverAddr): ?string
     {
         if ($this->dnssecValidator === null) {
@@ -918,9 +908,7 @@ class ResolutionSession
         return 'signed';
     }
 
-    /**
-     * @param list<RawRecord> $answers
-     */
+    /** @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $answers */
     private function validateAnswerRrsig(array $answers, string $zone): ?string
     {
         if ($this->dnssecValidator === null) {
@@ -1050,9 +1038,7 @@ class ResolutionSession
         return $allSigned ? 'signed' : 'unsigned';
     }
 
-    /**
-     * @param list<RawRecord> $authority
-     */
+    /** @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $authority */
     private function validateEmptyResponse(array $authority, string $zone, string $nameserverAddr): ?string
     {
         if ($this->dnssecValidator === null) {
@@ -1221,9 +1207,7 @@ class ResolutionSession
         return null;
     }
 
-    /**
-     * @param list<RawRecord> $authority
-     */
+    /** @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $authority */
     private function validateNsecProofOfUnsigned(array $authority, string $currentZone, string $delegatedZone, string $nameserverAddr): ?string
     {
         if ($this->dnssecValidator === null) {
@@ -1313,8 +1297,8 @@ class ResolutionSession
     }
 
     /**
-     * @param list<RawRecord> $rrsigRecords
-     * @param list<string>    $typesCovered
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $rrsigRecords
+     * @param list<string>                                       $typesCovered
      */
     private function findSignerZone(array $rrsigRecords, array $typesCovered): ?string
     {
@@ -1333,9 +1317,7 @@ class ResolutionSession
         return null;
     }
 
-    /**
-     * @return list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}>|null
-     */
+    /** @return list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}>|null */
     private function fetchAndCacheDnskeys(string $zone, string $nameserverAddr): ?array
     {
         if ($this->dnssecValidator === null) {
@@ -1400,9 +1382,7 @@ class ResolutionSession
         return $dnskeys;
     }
 
-    /**
-     * @return list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}>
-     */
+    /** @return list<array{keytag: int, algorithm: int, flags: int, protocol: int, public_key: string, name: string, public_key_b64: string, is_ksk: bool}> */
     private function parseDnskeysFromResult(QueryResult $result, string $zone): array
     {
         if ($this->dnssecValidator === null) {
@@ -1427,7 +1407,7 @@ class ResolutionSession
     /**
      * Convert RawRecord DTOs to the array format expected by DnssecValidator.
      *
-     * @param list<RawRecord> $records
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $records
      *
      * @return list<array{name: string, class: string, type: string, ttl: int, data: string}>
      */
@@ -1442,9 +1422,7 @@ class ResolutionSession
         ], $records);
     }
 
-    /**
-     * @param list<RawRecord> $records
-     */
+    /** @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $records */
     private function provesUnsignedDelegation(array $records, string $delegatedZone, string $currentZone): bool
     {
         $record = $records[0] ?? null;
@@ -1556,11 +1534,11 @@ class ResolutionSession
         $bits     = 0;
 
         for ($i = 0, $len = strlen($data); $i < $len; $i++) {
-            $buffer = ($buffer << 8) | ord($data[$i]);
-            $bits += 8;
+            $buffer  = ($buffer << 8) | ord($data[$i]);
+            $bits   += 8;
 
             while ($bits >= 5) {
-                $bits -= 5;
+                $bits   -= 5;
                 $result .= $alphabet[($buffer >> $bits) & 0x1F];
             }
         }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Results;
 
@@ -8,9 +8,7 @@ use ChiefTools\DNS\Resolver\Enums\DnssecStatus;
 
 readonly class DnssecResult
 {
-    /**
-     * @param list<string> $errors
-     */
+    /** @param list<string> $errors */
     public function __construct(
         public DnssecStatus $status,
         public array $errors = [],

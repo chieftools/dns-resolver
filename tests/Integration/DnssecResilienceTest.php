@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 use ChiefTools\DNS\Resolver\ResolverConfig;
 use ChiefTools\DNS\Resolver\ResolutionSession;
@@ -10,12 +10,10 @@ use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;
 use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 
-/**
- * Executor that throws QueryException for queries to specific nameserver addresses.
- */
+/** Executor that throws QueryException for queries to specific nameserver addresses. */
 $failingExecutorClass = new class implements DnsQueryExecutor
 {
-    /** @var array<string, QueryResult> */
+    /** @var array<string, \ChiefTools\DNS\Resolver\Executors\QueryResult> */
     private array $fixtures = [];
 
     /** @var list<string> */

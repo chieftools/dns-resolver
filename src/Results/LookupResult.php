@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Results;
 
@@ -9,9 +9,7 @@ use ChiefTools\DNS\Resolver\Enums\LookupStatus;
 
 readonly class LookupResult
 {
-    /**
-     * @param list<Record> $records
-     */
+    /** @param list<Record> $records */
     public function __construct(
         public array $records,
         public int $timeMs,
@@ -35,9 +33,7 @@ readonly class LookupResult
         return $this->status === LookupStatus::QUERY_FAILED;
     }
 
-    /**
-     * Filter records by type.
-     */
+    /** Filter records by type. */
     public function ofType(RecordType|string $type): self
     {
         $typeValue = $type instanceof RecordType ? $type->value : $type;

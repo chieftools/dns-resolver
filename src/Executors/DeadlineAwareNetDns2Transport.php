@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Executors;
 
@@ -13,7 +13,9 @@ use ChiefTools\DNS\Resolver\ResolutionDeadline;
 use ChiefTools\DNS\Resolver\Exceptions\QueryException;
 use ChiefTools\DNS\Resolver\Exceptions\ResolutionTimeoutException;
 
-/** @internal NetDNS2 packet handling with bounded, nonblocking network IO. */
+/**
+ * @internal NetDNS2 packet handling with bounded, nonblocking network IO.
+ */
 final class DeadlineAwareNetDns2Transport
 {
     private readonly ResolutionDeadline $queryDeadline;
@@ -39,7 +41,7 @@ final class DeadlineAwareNetDns2Transport
             throw new QueryException('Zone transfers do not support a total timeout.');
         }
 
-        Data::$compressed    = [];
+        Data::$compressed = [];
         $request             = new Request($domain, $type);
         $request->header->rd = 0;
 

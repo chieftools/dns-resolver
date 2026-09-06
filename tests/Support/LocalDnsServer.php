@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Tests\Support;
 
@@ -29,7 +29,7 @@ final class LocalDnsServer
         $this->process = $process;
         $this->pipes   = $pipes;
         stream_set_timeout($pipes[1], 3);
-        $port = fgets($pipes[1]);
+        $port          = fgets($pipes[1]);
 
         if ($port === false || (int)$port < 1) {
             $this->stop();
@@ -52,9 +52,9 @@ final class LocalDnsServer
         $end    = hrtime(true) + 100_000_000;
 
         while (!str_contains($output, 'closed') && hrtime(true) < $end) {
-            $read   = [$this->pipes[1]];
-            $write  = [];
-            $except = [];
+            $read    = [$this->pipes[1]];
+            $write   = [];
+            $except  = [];
             stream_select($read, $write, $except, 0, 10_000);
             $output .= $this->output();
         }

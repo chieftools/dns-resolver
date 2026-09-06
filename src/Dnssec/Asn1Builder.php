@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Dnssec;
 
@@ -32,28 +32,20 @@ readonly class Asn1Builder
         return "\x02" . $this->buildLength(strlen($value)) . $value;
     }
 
-    /**
-     * Build an ASN.1 SEQUENCE.
-     */
+    /** Build an ASN.1 SEQUENCE. */
     public function buildSequence(string $content): string
     {
         return "\x30" . $this->buildLength(strlen($content)) . $content;
     }
 
-    /**
-     * Build an ASN.1 BIT STRING.
-     */
+    /** Build an ASN.1 BIT STRING. */
     public function buildBitString(string $content): string
     {
         return "\x03" . $this->buildLength(strlen($content) + 1) . "\x00" . $content;
     }
 
-    /**
-     * Build ASN.1 length encoding.
-     */
-    /**
-     * @param int<0, max> $length
-     */
+    /** Build ASN.1 length encoding. */
+    /** @param int<0, max> $length */
     public function buildLength(int $length): string
     {
         if ($length < 128) {
@@ -145,12 +137,7 @@ readonly class Asn1Builder
         $curveOid = match ($curve) {
             'P-256' => "\x06\x08\x2a\x86\x48\xce\x3d\x03\x01\x07",
             'P-384' => "\x06\x05\x2b\x81\x04\x00\x22",
-            default => null,
         };
-
-        if ($curveOid === null) {
-            return null;
-        }
 
         $algoSeq   = $this->buildSequence($ecOid . $curveOid);
         $bitString = $this->buildBitString($ecPoint);
@@ -159,9 +146,7 @@ readonly class Asn1Builder
         return "-----BEGIN PUBLIC KEY-----\n" . chunk_split(base64_encode($derKey), 64) . "-----END PUBLIC KEY-----\n";
     }
 
-    /**
-     * Convert ECDSA raw signature (r||s) to DER format.
-     */
+    /** Convert ECDSA raw signature (r||s) to DER format. */
     public function ecdsaRawToDer(string $signature, string $curve): ?string
     {
         $componentLen = match ($curve) {

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Dnssec;
 
@@ -108,48 +108,46 @@ readonly class WireFormatConverter
         'DLV'        => 32769,
     ];
 
-    /**
-     * Convert RDATA to wire format based on record type.
-     */
+    /** Convert RDATA to wire format based on record type. */
     public function rdataToWire(string $type, string $data): ?string
     {
         return match ($type) {
             // Address records
-            'A'                           => $this->ipv4ToWire($data),
-            'AAAA'                        => $this->ipv6ToWire($data),
+            'A'    => $this->ipv4ToWire($data),
+            'AAAA' => $this->ipv6ToWire($data),
 
             // Name records (just a domain name)
             'NS', 'CNAME', 'PTR', 'DNAME' => $this->nameToWire($data),
 
             // Common records
-            'MX'                          => $this->mxToWire($data),
-            'TXT', 'SPF'                  => $this->txtToWire($data),
-            'SOA'                         => $this->soaToWire($data),
-            'SRV'                         => $this->srvToWire($data),
-            'CAA'                         => $this->caaToWire($data),
-            'NAPTR'                       => $this->naptrToWire($data),
-            'LOC'                         => $this->locToWire($data),
+            'MX'         => $this->mxToWire($data),
+            'TXT', 'SPF' => $this->txtToWire($data),
+            'SOA'        => $this->soaToWire($data),
+            'SRV'        => $this->srvToWire($data),
+            'CAA'        => $this->caaToWire($data),
+            'NAPTR'      => $this->naptrToWire($data),
+            'LOC'        => $this->locToWire($data),
 
             // DNSSEC records
-            'DNSKEY', 'CDNSKEY'           => $this->dnskeyToWire($data),
-            'DS', 'CDS'                   => $this->dsToWire($data),
-            'NSEC'                        => $this->nsecToWire($data),
-            'NSEC3'                       => $this->nsec3ToWire($data),
-            'CSYNC'                       => $this->csyncToWire($data),
+            'DNSKEY', 'CDNSKEY' => $this->dnskeyToWire($data),
+            'DS', 'CDS'         => $this->dsToWire($data),
+            'NSEC'              => $this->nsecToWire($data),
+            'NSEC3'             => $this->nsec3ToWire($data),
+            'CSYNC'             => $this->csyncToWire($data),
 
             // Security records
-            'SSHFP'                       => $this->sshfpToWire($data),
-            'TLSA', 'SMIMEA'              => $this->tlsaToWire($data),
-            'OPENPGPKEY'                  => $this->openpgpkeyToWire($data),
-            'CERT'                        => $this->certToWire($data),
+            'SSHFP'          => $this->sshfpToWire($data),
+            'TLSA', 'SMIMEA' => $this->tlsaToWire($data),
+            'OPENPGPKEY'     => $this->openpgpkeyToWire($data),
+            'CERT'           => $this->certToWire($data),
 
             // Service binding records
-            'SVCB', 'HTTPS'               => $this->svcbToWire($data),
+            'SVCB', 'HTTPS' => $this->svcbToWire($data),
 
             // URI record
-            'URI'                         => $this->uriToWire($data),
+            'URI' => $this->uriToWire($data),
 
-            default                       => null,
+            default => null,
         };
     }
 
@@ -171,8 +169,8 @@ readonly class WireFormatConverter
         $wire   = '';
 
         foreach ($labels as $label) {
-            $decodedLabel = $this->decodeDnsLabel($label);
-            $wire .= chr(strlen($decodedLabel) & 0xFF) . $decodedLabel;
+            $decodedLabel  = $this->decodeDnsLabel($label);
+            $wire         .= chr(strlen($decodedLabel) & 0xFF) . $decodedLabel;
         }
 
         return $wire . "\x00";
@@ -249,9 +247,7 @@ readonly class WireFormatConverter
         return $wire;
     }
 
-    /**
-     * Decode base32hex encoded string (RFC 4648 Section 7).
-     */
+    /** Decode base32hex encoded string (RFC 4648 Section 7). */
     public function base32Decode(string $encoded): ?string
     {
         $alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
@@ -270,11 +266,11 @@ readonly class WireFormatConverter
                 return null;
             }
 
-            $buffer = ($buffer << 5) | $val;
-            $bits += 5;
+            $buffer  = ($buffer << 5) | $val;
+            $bits   += 5;
 
             if ($bits >= 8) {
-                $bits -= 8;
+                $bits   -= 8;
                 $result .= chr(($buffer >> $bits) & 0xFF);
             }
         }
@@ -282,9 +278,7 @@ readonly class WireFormatConverter
         return $result;
     }
 
-    /**
-     * Decode a DNS label that may contain dig escape sequences.
-     */
+    /** Decode a DNS label that may contain dig escape sequences. */
     private function decodeDnsLabel(string $label): string
     {
         $result = '';
@@ -294,12 +288,12 @@ readonly class WireFormatConverter
         while ($i < $len) {
             if ($label[$i] === '\\' && $i + 1 < $len) {
                 if ($i + 3 < $len && ctype_digit($label[$i + 1]) && ctype_digit($label[$i + 2]) && ctype_digit($label[$i + 3])) {
-                    $octal  = substr($label, $i + 1, 3);
+                    $octal   = substr($label, $i + 1, 3);
                     $result .= chr(((int)octdec($octal)) & 0xFF);
-                    $i += 4;
+                    $i      += 4;
                 } else {
                     $result .= $label[$i + 1];
-                    $i += 2;
+                    $i      += 2;
                 }
             } else {
                 $result .= $label[$i];
@@ -343,7 +337,7 @@ readonly class WireFormatConverter
 
             while (strlen($string) > 255) {
                 $result .= chr(255) . substr($string, 0, 255);
-                $string = substr($string, 255);
+                $string  = substr($string, 255);
             }
 
             $result .= chr(strlen($string) & 0xFF) . $string;
@@ -476,9 +470,7 @@ readonly class WireFormatConverter
         return pack('CCC', (int)$matches[1], (int)$matches[2], (int)$matches[3]) . $certData;
     }
 
-    /**
-     * Convert LOC record to wire format (RFC 1876).
-     */
+    /** Convert LOC record to wire format (RFC 1876). */
     private function locToWire(string $data): ?string
     {
         $pattern = '/^(\d+)\s+(\d+)\s+([\d.]+)\s+([NS])\s+(\d+)\s+(\d+)\s+([\d.]+)\s+([EW])\s+([-\d.]+)m(?:\s+([\d.]+)m)?(?:\s+([\d.]+)m)?(?:\s+([\d.]+)m)?$/';
@@ -558,9 +550,7 @@ readonly class WireFormatConverter
         return $this->nameToWire($nextDomain) . $this->buildTypeBitmap($typeList);
     }
 
-    /**
-     * Convert NSEC3 record to wire format (RFC 5155).
-     */
+    /** Convert NSEC3 record to wire format (RFC 5155). */
     private function nsec3ToWire(string $data): ?string
     {
         $parts = preg_split('/\s+/', trim($data));
@@ -603,9 +593,7 @@ readonly class WireFormatConverter
         return $wire;
     }
 
-    /**
-     * Convert CSYNC record to wire format (RFC 7477).
-     */
+    /** Convert CSYNC record to wire format (RFC 7477). */
     private function csyncToWire(string $data): ?string
     {
         $parts = preg_split('/\s+/', trim($data));
@@ -629,9 +617,7 @@ readonly class WireFormatConverter
         return $publicKey !== false ? $publicKey : null;
     }
 
-    /**
-     * Convert CERT record to wire format (RFC 4398).
-     */
+    /** Convert CERT record to wire format (RFC 4398). */
     private function certToWire(string $data): ?string
     {
         $data = preg_replace('/\s+/', ' ', trim($data));
@@ -678,9 +664,7 @@ readonly class WireFormatConverter
         };
     }
 
-    /**
-     * Convert SVCB/HTTPS record to wire format (RFC 9460).
-     */
+    /** Convert SVCB/HTTPS record to wire format (RFC 9460). */
     private function svcbToWire(string $data): ?string
     {
         $parts = preg_split('/\s+/', trim($data), 3);
@@ -769,8 +753,8 @@ readonly class WireFormatConverter
         $alpnIds = explode(',', $value);
 
         foreach ($alpnIds as $alpnId) {
-            $alpnId = trim($alpnId);
-            $wire .= chr(strlen($alpnId) & 0xFF) . $alpnId;
+            $alpnId  = trim($alpnId);
+            $wire   .= chr(strlen($alpnId) & 0xFF) . $alpnId;
         }
 
         return $wire;

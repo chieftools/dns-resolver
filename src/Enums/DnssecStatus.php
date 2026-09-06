@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace ChiefTools\DNS\Resolver\Enums;
 
@@ -13,7 +13,7 @@ enum DnssecStatus: string
      * This means the resolver was able to build and verify the relevant trust
      * chain without detecting any signature or delegation failures.
      */
-    case SIGNED        = 'signed';
+    case SIGNED = 'signed';
 
     /**
      * The lookup completed without usable DNSSEC signatures for one or more
@@ -22,7 +22,7 @@ enum DnssecStatus: string
      * This commonly occurs for unsigned zones or unsigned delegations where
      * the resolver treats the result as insecure rather than broken.
      */
-    case UNSIGNED      = 'unsigned';
+    case UNSIGNED = 'unsigned';
 
     /**
      * DNSSEC validation failed.
@@ -31,7 +31,7 @@ enum DnssecStatus: string
      * broken trust-chain material that should cause the result to be treated
      * as bogus.
      */
-    case INVALID       = 'invalid';
+    case INVALID = 'invalid';
 
     /**
      * The resolver did not reach a definitive DNSSEC conclusion.
