@@ -10,7 +10,7 @@
     },
     "require-dev": {
         "chieftools/php-cs-fixer": "1.1.*",
-        "pestphp/pest": "^4.4",
+        "pestphp/pest": "^5.2",
         "phpstan/phpstan": "^2.1"
     },
     "autoload": {
