@@ -16,5 +16,6 @@ readonly class Record
         public string $data,
         public string $rawData,
         public RecordValidation $validation = RecordValidation::UNKNOWN,
+        public ?int $sourceId = null,
     ) {}
 }

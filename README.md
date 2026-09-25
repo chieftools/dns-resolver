@@ -76,6 +76,40 @@ $aRecords = $result->ofType('A');
 $mxRecords = $result->ofType(\ChiefTools\DNS\Resolver\Enums\RecordType::MX);
 ```
 
+## Checking authoritative nameservers
+
+Enable source capture when you need to compare the answer from every nameserver in a parent delegation. The normal lookup still finishes first; call `verifyNameservers()` afterward, optionally with a callback to receive each nameserver answer as it arrives.
+
+```php
+use ChiefTools\DNS\Resolver\Resolver;
+use ChiefTools\DNS\Resolver\VerificationOptions;
+use ChiefTools\DNS\Resolver\Results\NameserverAnswer;
+
+$resolver = new Resolver();
+$result = $resolver->resolve('www.example.com', ['A', 'AAAA'], captureAnswerSources: true);
+
+foreach ($result->answerSources as $source) {
+    echo "{$source->queryName} {$source->queryType} via {$source->selectedNameserver}\n";
+    foreach ($source->nameservers as $nameserver) {
+        echo "  {$nameserver->host}\n";
+    }
+}
+
+$verification = $resolver->verifyNameservers(
+    $result,
+    static function (NameserverAnswer $answer): void {
+        echo "{$answer->nameserver}: {$answer->status->value}\n";
+    },
+    new VerificationOptions(totalTimeout: 20),
+);
+```
+
+Each record's `sourceId` links it to an `AnswerSource`. The verifier compares the complete record set for each captured query, ignoring record order and TTL. Its answers report matching, different, or unavailable nameservers, including missing and extra records. The aggregate source status is `agree`, `different`, `incomplete`, or `single`. An unavailable server does not count as agreement. `allowAddress` on `VerificationOptions` can restrict addresses used by the additional lookups.
+
+The verifier uses a separate time budget from the initial lookup. With a deadline-aware executor, DNS waits share that budget; with other executors, the deadline is checked between blocking queries.
+
+This compares the nameservers from the parent delegation observed during resolution. It does not use an NS record returned by the child zone as the authority list.
+
 ## DNSSEC validation
 
 DNSSEC is enabled by default (`DnssecMode::ON`). The resolver validates the full chain of trust from the root zone trust anchor through every delegation.

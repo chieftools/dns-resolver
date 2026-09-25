@@ -11,12 +11,15 @@ use ChiefTools\DNS\Resolver\Data\RootServers;
 use ChiefTools\DNS\Resolver\Enums\DnssecMode;
 use ChiefTools\DNS\Resolver\Enums\RecordType;
 use ChiefTools\DNS\Resolver\Enums\LookupStatus;
+use ChiefTools\DNS\Resolver\Results\AnswerSource;
 use ChiefTools\DNS\Resolver\Results\DnssecResult;
 use ChiefTools\DNS\Resolver\Results\LookupResult;
 use ChiefTools\DNS\Resolver\Dnssec\DnssecValidator;
 use ChiefTools\DNS\Resolver\Enums\RecordValidation;
 use ChiefTools\DNS\Resolver\Executors\DnsQueryExecutor;
 use ChiefTools\DNS\Resolver\Executors\NetDns2QueryExecutor;
+use ChiefTools\DNS\Resolver\Results\AuthoritativeNameserver;
+use ChiefTools\DNS\Resolver\Results\NameserverVerificationResult;
 use ChiefTools\DNS\Resolver\Executors\DeadlineAwareDnsQueryExecutor;
 
 readonly class Resolver
@@ -51,6 +54,7 @@ readonly class Resolver
         RecordType|string|array $types = 'A',
         DnssecMode $dnssec = DnssecMode::ON,
         ?Closure $onEvent = null,
+        bool $captureAnswerSources = false,
     ): LookupResult {
         $deadline = $this->config->totalTimeout !== null
             ? new ResolutionDeadline($this->config->totalTimeout, $this->clock)
@@ -77,6 +81,7 @@ readonly class Resolver
             dnssecValidator: $dnssecValidator,
             onEvent: $onEvent,
             deadline: $deadline,
+            captureAnswerSources: $captureAnswerSources,
         );
 
         $results = $engine->resolve(
@@ -101,16 +106,12 @@ readonly class Resolver
         };
 
         // Build record DTOs
-        $records = [];
+        $records          = [];
+        $formattedByRawId = [];
+        $sourceIds        = $captureAnswerSources ? $engine->getRecordSourceIds() : [];
 
         if (is_array($results)) {
             foreach ($results as $rawRecord) {
-                $recordType = RecordType::tryFrom($rawRecord->type);
-
-                if ($recordType === null) {
-                    continue;
-                }
-
                 $validation = RecordValidation::UNKNOWN;
 
                 if ($dnssecValidator !== null) {
@@ -123,14 +124,13 @@ readonly class Resolver
                     };
                 }
 
-                $records[] = new Record(
-                    name: $rawRecord->name,
-                    type: $recordType,
-                    ttl: $rawRecord->ttl,
-                    data: self::formatRecordData($rawRecord->type, $rawRecord->data),
-                    rawData: $rawRecord->data,
-                    validation: $validation,
-                );
+                $rawId  = spl_object_id($rawRecord);
+                $record = RecordFormatter::fromRaw($rawRecord, $validation, $sourceIds[$rawId] ?? null);
+
+                if ($record !== null) {
+                    $records[]                = $record;
+                    $formattedByRawId[$rawId] = $record;
+                }
             }
         }
 
@@ -150,6 +150,53 @@ readonly class Resolver
             }
         }
 
+        $answerSources = null;
+        if ($captureAnswerSources) {
+            $answerSources = [];
+            foreach ($engine->getAnswerSources() as $source) {
+                $sourceRecords = [];
+                foreach ($source['records'] as $rawRecord) {
+                    $record = $formattedByRawId[spl_object_id($rawRecord)] ?? null;
+                    if ($record !== null && in_array($record, $records, true)) {
+                        $sourceRecords[] = $record;
+                    }
+                }
+
+                if ($sourceRecords === []) {
+                    continue;
+                }
+
+                $nameservers = [];
+                foreach ($source['nameservers'] as $candidate) {
+                    $key = strtolower(rtrim($candidate['host'], '.'));
+                    if (!isset($nameservers[$key])) {
+                        $nameservers[$key] = ['host' => $candidate['host'], 'addresses' => []];
+                    }
+                    if (!empty($candidate['glue']) && $candidate['addr'] !== null) {
+                        $nameservers[$key]['addresses'][$candidate['addr']] = true;
+                    }
+                }
+
+                $answerSources[] = new AnswerSource(
+                    id: $source['id'],
+                    queryName: $source['queryName'],
+                    queryType: $source['queryType'],
+                    zone: $source['zone'],
+                    nameservers: array_values(array_map(
+                        static fn (array $candidate): AuthoritativeNameserver => new AuthoritativeNameserver(
+                            $candidate['host'],
+                            array_keys($candidate['addresses']),
+                        ),
+                        $nameservers,
+                    )),
+                    selectedNameserver: $source['selectedNameserver'],
+                    selectedAddress: $source['selectedAddress'],
+                    responseCode: $source['responseCode'],
+                    records: $sourceRecords,
+                );
+            }
+        }
+
         $deadline?->throwIfExpired();
 
         return new LookupResult(
@@ -158,45 +205,17 @@ readonly class Resolver
             status: $status,
             dnssec: $dnssecResult,
             info: $info,
+            answerSources: $answerSources,
         );
     }
 
-    /** Format record data for human readability. */
-    private static function formatRecordData(string $type, string $data): string
-    {
-        return match ($type) {
-            'TXT'            => '"' . str_replace('" "', '', $data) . '"',
-            'AAAA'           => self::shortenIPv6($data),
-            'TLSA', 'SMIMEA' => self::normalizeHexRecord($data, 3),
-            'SSHFP'          => self::normalizeHexRecord($data, 2),
-            'DS', 'CDS'      => self::normalizeHexRecord($data, 3),
-            default          => $data,
-        };
-    }
-
-    private static function shortenIPv6(string $ip): string
-    {
-        $packed = inet_pton($ip);
-
-        if ($packed === false) {
-            return $ip;
-        }
-
-        return inet_ntop($packed) ?: $ip;
-    }
-
-    /** Normalize a record with hex data by removing spaces from the hex portion. */
-    private static function normalizeHexRecord(string $data, int $prefixParts): string
-    {
-        $parts = preg_split('/\s+/', $data, $prefixParts + 1);
-
-        if ($parts === false || count($parts) <= $prefixParts) {
-            return $data;
-        }
-
-        $prefix  = implode(' ', array_slice($parts, 0, $prefixParts));
-        $hexData = preg_replace('/\s+/', '', $parts[$prefixParts]);
-
-        return $prefix . ' ' . $hexData;
+    /** @param (\Closure(\ChiefTools\DNS\Resolver\Results\NameserverAnswer): void)|null $onAnswer */
+    public function verifyNameservers(
+        LookupResult $result,
+        ?Closure $onAnswer = null,
+        ?VerificationOptions $options = null,
+    ): NameserverVerificationResult {
+        return (new NameserverVerifier($this->executor, $this->config, $this->clock))
+            ->verify($result, $onAnswer, $options ?? new VerificationOptions);
     }
 }

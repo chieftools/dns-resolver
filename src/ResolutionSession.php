@@ -30,12 +30,21 @@ class ResolutionSession
 
     private int $totalTimeMs = 0;
 
+    /** @var list<array{id: int, queryName: string, queryType: string, zone: string, nameservers: list<array{host: string, addr: string|null, glue?: bool}>, selectedNameserver: string, selectedAddress: string, responseCode: string, records: list<\ChiefTools\DNS\Resolver\Executors\RawRecord>}> */
+    private array $answerSources = [];
+
+    /** @var array<int, int> */
+    private array $recordSourceIds = [];
+
     public function __construct(
         private readonly DnsQueryExecutor $executor,
         private readonly ResolverConfig $config,
         ?DnssecValidator $dnssecValidator = null,
         ?Closure $onEvent = null,
         private readonly ?ResolutionDeadline $deadline = null,
+        private readonly bool $captureAnswerSources = false,
+        /** @var (\Closure(string): bool)|null */
+        private readonly ?Closure $allowAddress = null,
     ) {
         if ($deadline !== null && !$executor instanceof DeadlineAwareDnsQueryExecutor) {
             throw new InvalidArgumentException('A total timeout requires a deadline-aware DNS query executor.');
@@ -52,6 +61,18 @@ class ResolutionSession
     public function getDnssecValidator(): ?DnssecValidator
     {
         return $this->dnssecValidator;
+    }
+
+    /** @return list<array{id: int, queryName: string, queryType: string, zone: string, nameservers: list<array{host: string, addr: string|null, glue?: bool}>, selectedNameserver: string, selectedAddress: string, responseCode: string, records: list<\ChiefTools\DNS\Resolver\Executors\RawRecord>}> */
+    public function getAnswerSources(): array
+    {
+        return $this->answerSources;
+    }
+
+    /** @return array<int, int> */
+    public function getRecordSourceIds(): array
+    {
+        return $this->recordSourceIds;
     }
 
     /**
@@ -120,7 +141,7 @@ class ResolutionSession
 
         // Handle answers if present
         if ($result->answer !== []) {
-            return $this->handleAnswers($result, $domain, $types, $nameserver, $currentZone, $lookups, $depth);
+            return $this->handleAnswers($result, $domain, $types, $nameservers, $currentZone, $lookups, $depth);
         }
 
         if ($result->responseCode === 'NXDOMAIN') {
@@ -135,7 +156,7 @@ class ResolutionSession
         }
 
         // No answers and no delegation - authoritative empty response
-        return $this->handleEmptyResponse($result, $domain, $types, $nameserver, $currentZone, $depth);
+        return $this->handleEmptyResponse($result, $domain, $types, $nameservers, $currentZone, $depth);
     }
 
     /**
@@ -233,8 +254,8 @@ class ResolutionSession
     }
 
     /**
-     * @param list<string>                                   $types
-     * @param array{host: string, addr: string, glue?: bool} $nameserver
+     * @param list<string>                                              $types
+     * @param list<array{host: string, addr: string|null, glue?: bool}> $nameservers
      *
      * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>
      */
@@ -242,11 +263,12 @@ class ResolutionSession
         QueryResult $result,
         string $domain,
         array $types,
-        array $nameserver,
+        array $nameservers,
         string $currentZone,
         int $lookups,
         int $depth,
     ): array {
+        $nameserver  = $nameservers[0];
         $answers     = $result->answer;
         $primaryType = $types[0];
 
@@ -269,20 +291,22 @@ class ResolutionSession
         // Filter out RRSIG records from final answer
         $answers = array_values(array_filter($answers, static fn (RawRecord $r) => $r->type !== 'RRSIG'));
 
+        $cnameRecords  = array_values(array_filter($answers, static fn (RawRecord $record): bool => $record->type === 'CNAME'));
+        $sourceRecords = $cnameRecords !== [] && $types !== ['CNAME'] ? $cnameRecords : $answers;
+        $this->captureAnswer($domain, $primaryType, $currentZone, $nameservers, $result, $sourceRecords);
+
         // If only looking for CNAME records, return as-is
         if ($types === ['CNAME']) {
             return $this->deduplicateRecords($answers);
         }
 
         // Follow CNAME if present
-        $cnameRecords = array_values(array_filter($answers, static fn (RawRecord $r) => $r->type === 'CNAME'));
-
         if ($cnameRecords !== []) {
             return $this->followCname($cnameRecords, $cnameRecords, $types, $lookups, $depth);
         }
 
         // Query for remaining types at the same authoritative nameserver
-        $answers = $this->queryAdditionalTypes($answers, $domain, $types, $nameserver, $currentZone, $depth);
+        $answers = $this->queryAdditionalTypes($answers, $domain, $types, $nameservers, $currentZone, $depth);
 
         return $this->deduplicateRecords($answers);
     }
@@ -356,9 +380,9 @@ class ResolutionSession
     }
 
     /**
-     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord> $answers
-     * @param list<string>                                       $types
-     * @param array{host: string, addr: string, glue?: bool}     $nameserver
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord>        $answers
+     * @param list<string>                                              $types
+     * @param list<array{host: string, addr: string|null, glue?: bool}> $nameservers
      *
      * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>
      */
@@ -366,10 +390,15 @@ class ResolutionSession
         array $answers,
         string $domain,
         array $types,
-        array $nameserver,
+        array $nameservers,
         string $currentZone,
         int $depth,
     ): array {
+        $nameserver = $nameservers[0];
+        if ($nameserver['addr'] === null) {
+            throw new RuntimeException('Selected nameserver has no address.');
+        }
+
         foreach (array_slice($types, 1) as $additionalType) {
             try {
                 $additionalResult = $this->query($domain, $additionalType, $nameserver['addr'], $this->dnssecValidator !== null);
@@ -396,6 +425,7 @@ class ResolutionSession
                 ));
 
                 $additionalAnswers = array_values(array_filter($additionalResult->answer, static fn (RawRecord $r) => $r->type !== 'RRSIG'));
+                $this->captureAnswer($domain, $additionalType, $currentZone, $nameservers, $additionalResult, $additionalAnswers);
                 $answers           = array_merge($answers, $additionalAnswers);
             } else {
                 $emptyValidationStatus = $this->dnssecValidator !== null
@@ -473,40 +503,80 @@ class ResolutionSession
      */
     private function buildNextNameservers(QueryResult $result, array $authorityNs): array
     {
-        $delegatedHosts = array_fill_keys(array_map(
-            static fn (RawRecord $record): string => strtolower(rtrim($record->data, '.')),
-            $authorityNs,
-        ), true);
-
-        $allowedTypes = $this->getAllowedRecursiveLookupTypes();
-
-        $glueRecords = array_values(array_filter(
-            $result->additional,
-            static fn (RawRecord $r) => in_array($r->type, $allowedTypes, true) && isset($delegatedHosts[strtolower(rtrim($r->name, '.'))]),
-        ));
-
-        if ($glueRecords === []) {
-            $nameservers = array_map(
-                static fn (RawRecord $record) => ['host' => rtrim($record->data, '.'), 'addr' => null, 'glue' => false],
-                $authorityNs,
-            );
-            shuffle($nameservers);
-
-            return $nameservers;
+        $delegatedHosts = [];
+        foreach ($authorityNs as $record) {
+            $host                  = strtolower(rtrim($record->data, '.'));
+            $delegatedHosts[$host] = rtrim($record->data, '.');
         }
 
-        $nameservers = array_map(
-            static fn (RawRecord $record) => ['host' => rtrim($record->name, '.'), 'addr' => self::shortenIPv6($record->data), 'glue' => true],
-            $glueRecords,
-        );
-        shuffle($nameservers);
+        $glueByHost   = [];
+        $allowedTypes = $this->getAllowedRecursiveLookupTypes();
+        foreach ($result->additional as $record) {
+            $host = strtolower(rtrim($record->name, '.'));
+            if (isset($delegatedHosts[$host]) && in_array($record->type, $allowedTypes, true)) {
+                $glueByHost[$host][self::shortenIPv6($record->data)] = true;
+            }
+        }
 
-        return $nameservers;
+        $glued      = [];
+        $unresolved = [];
+        foreach ($delegatedHosts as $key => $host) {
+            if (isset($glueByHost[$key])) {
+                foreach (array_keys($glueByHost[$key]) as $address) {
+                    $glued[] = ['host' => $host, 'addr' => $address, 'glue' => true];
+                }
+            } else {
+                $unresolved[] = ['host' => $host, 'addr' => null, 'glue' => false];
+            }
+        }
+
+        shuffle($glued);
+        shuffle($unresolved);
+
+        return array_merge($glued, $unresolved);
     }
 
     /**
-     * @param array{host: string, addr: string, glue?: bool} $nameserver
-     * @param list<string>                                   $types
+     * @param list<array{host: string, addr: string|null, glue?: bool}> $nameservers
+     * @param list<\ChiefTools\DNS\Resolver\Executors\RawRecord>        $records
+     */
+    private function captureAnswer(
+        string $queryName,
+        string $queryType,
+        string $zone,
+        array $nameservers,
+        QueryResult $result,
+        array $records,
+    ): void {
+        if (!$this->captureAnswerSources || $records === []) {
+            return;
+        }
+
+        $id                    = count($this->answerSources) + 1;
+        $selected              = $nameservers[0];
+        if ($selected['addr'] === null) {
+            throw new RuntimeException('Selected nameserver has no address.');
+        }
+        $this->answerSources[] = [
+            'id'                 => $id,
+            'queryName'          => $queryName,
+            'queryType'          => $queryType,
+            'zone'               => $zone,
+            'nameservers'        => $nameservers,
+            'selectedNameserver' => $selected['host'],
+            'selectedAddress'    => $selected['addr'],
+            'responseCode'       => $result->responseCode,
+            'records'            => $records,
+        ];
+
+        foreach ($records as $record) {
+            $this->recordSourceIds[spl_object_id($record)] = $id;
+        }
+    }
+
+    /**
+     * @param list<array{host: string, addr: string|null, glue?: bool}> $nameservers
+     * @param list<string>                                              $types
      *
      * @return list<\ChiefTools\DNS\Resolver\Executors\RawRecord>|null
      */
@@ -514,11 +584,15 @@ class ResolutionSession
         QueryResult $result,
         string $domain,
         array $types,
-        array $nameserver,
+        array $nameservers,
         string $currentZone,
         int $depth,
     ): ?array {
+        $nameserver  = $nameservers[0];
         $primaryType = $types[0];
+        if ($nameserver['addr'] === null) {
+            throw new RuntimeException('Selected nameserver has no address.');
+        }
 
         $emptyResponseStatus = $this->dnssecValidator !== null
             ? $this->validateEmptyResponse($result->authority, $currentZone, $nameserver['addr'])
@@ -536,7 +610,7 @@ class ResolutionSession
         ));
 
         // Query for remaining types at the same authoritative nameserver
-        $answers = $this->queryAdditionalTypes([], $domain, $types, $nameserver, $currentZone, $depth);
+        $answers = $this->queryAdditionalTypes([], $domain, $types, $nameservers, $currentZone, $depth);
 
         if ($answers === []) {
             return null;
@@ -617,6 +691,10 @@ class ResolutionSession
     private function query(string $domain, string $type, string $nameserverAddr, bool $dnssec = false): QueryResult
     {
         $this->deadline?->throwIfExpired();
+
+        if ($this->allowAddress !== null && !($this->allowAddress)($nameserverAddr)) {
+            throw new QueryException('Nameserver address is not allowed.');
+        }
 
         $result = $this->deadline !== null && $this->executor instanceof DeadlineAwareDnsQueryExecutor
             ? $this->executor->queryWithDeadline($domain, $type, $nameserverAddr, $dnssec, $this->deadline)
