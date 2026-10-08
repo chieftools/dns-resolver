@@ -22,4 +22,24 @@ describe('netdns2 query executor', function () {
         'without DNSSEC' => false,
         'with DNSSEC'    => true,
     ]);
+
+    it('retries without EDNS when the nameserver answers EDNS queries with FORMERR', function (bool $dnssec) {
+        $server = new LocalDnsServer('edns-formerr');
+
+        try {
+            $result = new NetDns2QueryExecutor(timeout: 1, port: $server->port)->query('client.transport.test', 'A', '127.0.0.1', $dnssec);
+            $output = $server->output();
+
+            expect($result->responseCode)->toBe('NOERROR');
+            expect($result->answer)->toHaveCount(1);
+            expect($result->answer[0]->data)->toBe('192.0.2.83');
+            expect($output)->toContain('query:0:' . (int)$dnssec . ':1');
+            expect($output)->toContain('query:0:0:0');
+        } finally {
+            $server->stop();
+        }
+    })->with([
+        'without DNSSEC' => false,
+        'with DNSSEC'    => true,
+    ]);
 });

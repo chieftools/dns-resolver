@@ -28,28 +28,14 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
 
     public function query(string $domain, string $type, string $nameserverAddr, bool $dnssec = false): QueryResult
     {
-        try {
-            $resolver = new Resolver([
-                'nameservers' => [$nameserverAddr],
-                'recurse'     => false,
-                'timeout'     => $this->timeout,
-                'dnssec'      => $dnssec,
-                'dns_port'    => $this->port,
-                'cache_type'  => \NetDNS2\Cache::CACHE_TYPE_NONE,
-            ]);
-        } catch (Exception $e) {
-            throw new QueryException(self::mapErrorMessage($e->getMessage()), previous: $e);
+        $result = $this->execute($this->createResolver($nameserverAddr, $dnssec, edns: true), $domain, $type);
+
+        // Some nameservers answer EDNS queries with FORMERR, RFC 6891 section 7 says to retry those without EDNS
+        if ($result->responseCode === 'FORMERR') {
+            return $this->execute($this->createResolver($nameserverAddr, dnssec: false, edns: false), $domain, $type);
         }
 
-        // Always use EDNS(0) so answers larger than 512 bytes fit over UDP, not every nameserver answers over TCP.
-        // NetDNS2 only adds an OPT record when an EDNS option is set, a bare OPT record enables EDNS without the DO bit.
-        if (!$dnssec) {
-            $resolver->edns->opts['edns'] = new OPT;
-        }
-
-        $resolver->dnssec_payload_size = self::UDP_PAYLOAD_SIZE;
-
-        return $this->execute($resolver, $domain, $type);
+        return $result;
     }
 
     public function queryWithDeadline(
@@ -66,6 +52,32 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
         $deadline->throwIfExpired();
 
         return $result;
+    }
+
+    private function createResolver(string $nameserverAddr, bool $dnssec, bool $edns): Resolver
+    {
+        try {
+            $resolver = new Resolver([
+                'nameservers' => [$nameserverAddr],
+                'recurse'     => false,
+                'timeout'     => $this->timeout,
+                'dnssec'      => $dnssec,
+                'dns_port'    => $this->port,
+                'cache_type'  => \NetDNS2\Cache::CACHE_TYPE_NONE,
+            ]);
+        } catch (Exception $e) {
+            throw new QueryException(self::mapErrorMessage($e->getMessage()), previous: $e);
+        }
+
+        // Use EDNS(0) so answers larger than 512 bytes fit over UDP, not every nameserver answers over TCP.
+        // NetDNS2 only adds an OPT record when an EDNS option is set, a bare OPT record enables EDNS without the DO bit.
+        if ($edns && !$dnssec) {
+            $resolver->edns->opts['edns'] = new OPT;
+        }
+
+        $resolver->dnssec_payload_size = self::UDP_PAYLOAD_SIZE;
+
+        return $resolver;
     }
 
     private function execute(Resolver|DeadlineAwareNetDns2Transport $resolver, string $domain, string $type): QueryResult

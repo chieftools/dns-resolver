@@ -62,6 +62,25 @@ describe('deadline transport', function () {
         'EDNS only'    => ['edns-required', false, 'A', '192.0.2.83'],
     ]);
 
+    it('retries without EDNS when the nameserver answers EDNS queries with FORMERR', function (bool $dnssec) {
+        $server = new LocalDnsServer('edns-formerr');
+
+        try {
+            $transport = new DeadlineAwareNetDns2Transport(new ResolutionDeadline(1), '127.0.0.1', 1, $dnssec, $server->port);
+            $response  = $transport->query('client.transport.test', 'A');
+            $output    = $server->output();
+
+            expect(inet_pton((string)$response->answer[0]->address))->toBe(inet_pton('192.0.2.83'));
+            expect($output)->toContain('query:0:' . (int)$dnssec . ':1');
+            expect($output)->toContain('query:0:0:0');
+        } finally {
+            $server->stop();
+        }
+    })->with([
+        'without DNSSEC' => false,
+        'with DNSSEC'    => true,
+    ]);
+
     it('rejects responses that do not match the request', function (string $scenario) {
         $server    = new LocalDnsServer($scenario);
         $transport = new DeadlineAwareNetDns2Transport(new ResolutionDeadline(1), '127.0.0.1', 1, port: $server->port);

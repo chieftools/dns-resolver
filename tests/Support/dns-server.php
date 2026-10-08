@@ -82,6 +82,11 @@ while (hrtime(true) < $end) {
 
         if (($socket === $udp && str_starts_with($scenario, 'tcp-')) || ($scenario === 'edns-required' && !$edns)) {
             $response->header->tc = 1;
+        } elseif ($scenario === 'edns-formerr' && $edns) {
+            // Like some real nameservers: FORMERR without repeating the question when the query uses EDNS
+            $response->header->rcode   = NetDNS2\ENUM\RR\Code::FORMERR;
+            $response->header->qdcount = 0;
+            $response->question        = [];
         } elseif ($scenario === 'nxdomain') {
             $response->header->rcode = NetDNS2\ENUM\RR\Code::NXDOMAIN;
         } else {
