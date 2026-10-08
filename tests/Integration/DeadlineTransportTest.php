@@ -59,6 +59,7 @@ describe('deadline transport', function () {
         'UDP DNSSEC'   => ['answer', true, 'A', '192.0.2.83'],
         'AAAA'         => ['answer', false, 'AAAA', '2001:db8::83'],
         'TCP fallback' => ['tcp-answer', false, 'A', '192.0.2.83'],
+        'EDNS only'    => ['edns-required', false, 'A', '192.0.2.83'],
     ]);
 
     it('rejects responses that do not match the request', function (string $scenario) {

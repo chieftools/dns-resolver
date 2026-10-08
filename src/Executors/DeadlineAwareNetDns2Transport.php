@@ -45,16 +45,15 @@ final class DeadlineAwareNetDns2Transport
         $request             = new Request($domain, $type);
         $request->header->rd = 0;
 
-        if ($this->dnssec) {
-            $opt                      = new OPT;
-            $opt->udp_length          = 4000;
-            $opt->do                  = 1;
-            $request->additional[]    = $opt;
-            $request->header->arcount = 1;
-        }
+        // Always use EDNS(0) so answers larger than 512 bytes fit over UDP, not every nameserver answers over TCP
+        $opt                      = new OPT;
+        $opt->udp_length          = NetDns2QueryExecutor::UDP_PAYLOAD_SIZE;
+        $opt->do                  = $this->dnssec ? 1 : 0;
+        $request->additional[]    = $opt;
+        $request->header->arcount = 1;
 
         $packet   = $request->get();
-        $tcp      = strlen($packet) > ($this->dnssec ? 4000 : Header::DNS_MAX_UDP_SIZE);
+        $tcp      = strlen($packet) > NetDns2QueryExecutor::UDP_PAYLOAD_SIZE;
         $response = $this->exchange($packet, $tcp);
         $this->validateHeader($request, $response);
 

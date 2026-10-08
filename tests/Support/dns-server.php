@@ -65,20 +65,22 @@ while (hrtime(true) < $end) {
             continue;
         }
 
-        if ($socket === $client && $scenario === 'tcp-close') {
+        // Like some real nameservers: no TCP at all and a truncated answer to queries without EDNS
+        if ($socket === $client && in_array($scenario, ['tcp-close', 'edns-required'], true)) {
             fclose($client);
             $client = null;
             continue;
         }
 
         $response                  = new Response($query, strlen($query));
-        $dnssec                    = count($response->additional) > 0 && $response->additional[0]->do === 1;
+        $edns                      = count($response->additional) > 0;
+        $dnssec                    = $edns && $response->additional[0]->do === 1;
         $response->header->qr      = 1;
         $response->header->aa      = 1;
         $response->header->arcount = 0;
         $response->additional      = [];
 
-        if ($socket === $udp && str_starts_with($scenario, 'tcp-')) {
+        if (($socket === $udp && str_starts_with($scenario, 'tcp-')) || ($scenario === 'edns-required' && !$edns)) {
             $response->header->tc = 1;
         } elseif ($scenario === 'nxdomain') {
             $response->header->rcode = NetDNS2\ENUM\RR\Code::NXDOMAIN;
@@ -102,7 +104,7 @@ while (hrtime(true) < $end) {
         Data::$compressed = [];
         $response->offset = 0;
         $bytes            = $response->get();
-        echo 'query:' . $response->header->rd . ':' . (int)$dnssec . PHP_EOL;
+        echo 'query:' . $response->header->rd . ':' . (int)$dnssec . ':' . (int)$edns . PHP_EOL;
         flush();
 
         if ($socket === $udp) {

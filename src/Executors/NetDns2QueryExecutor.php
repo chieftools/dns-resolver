@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace ChiefTools\DNS\Resolver\Executors;
 
 use NetDNS2\RR;
+use NetDNS2\RR\OPT;
 use NetDNS2\Resolver;
 use NetDNS2\Exception;
 use ChiefTools\DNS\Resolver\ResolutionDeadline;
@@ -12,8 +13,17 @@ use ChiefTools\DNS\Resolver\Exceptions\QueryException;
 
 class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
 {
+    /**
+     * The EDNS(0) UDP payload size we advertise, as recommended by DNS Flag Day 2020.
+     *
+     * Larger UDP answers get fragmented and fragments are often dropped, which causes timeouts.
+     * Answers that don't fit are truncated and retried over TCP instead.
+     */
+    public const int UDP_PAYLOAD_SIZE = 1232;
+
     public function __construct(
         private readonly int $timeout = 2,
+        private readonly int $port = 53,
     ) {}
 
     public function query(string $domain, string $type, string $nameserverAddr, bool $dnssec = false): QueryResult
@@ -24,11 +34,20 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
                 'recurse'     => false,
                 'timeout'     => $this->timeout,
                 'dnssec'      => $dnssec,
+                'dns_port'    => $this->port,
                 'cache_type'  => \NetDNS2\Cache::CACHE_TYPE_NONE,
             ]);
         } catch (Exception $e) {
             throw new QueryException(self::mapErrorMessage($e->getMessage()), previous: $e);
         }
+
+        // Always use EDNS(0) so answers larger than 512 bytes fit over UDP, not every nameserver answers over TCP.
+        // NetDNS2 only adds an OPT record when an EDNS option is set, a bare OPT record enables EDNS without the DO bit.
+        if (!$dnssec) {
+            $resolver->edns->opts['edns'] = new OPT;
+        }
+
+        $resolver->dnssec_payload_size = self::UDP_PAYLOAD_SIZE;
 
         return $this->execute($resolver, $domain, $type);
     }
@@ -42,7 +61,7 @@ class NetDns2QueryExecutor implements DeadlineAwareDnsQueryExecutor
     ): QueryResult {
         $deadline->throwIfExpired();
 
-        $resolver = new DeadlineAwareNetDns2Transport($deadline, $nameserverAddr, $this->timeout, $dnssec);
+        $resolver = new DeadlineAwareNetDns2Transport($deadline, $nameserverAddr, $this->timeout, $dnssec, $this->port);
         $result   = $this->execute($resolver, $domain, $type);
         $deadline->throwIfExpired();
 
